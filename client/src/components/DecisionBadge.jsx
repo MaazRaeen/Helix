@@ -27,3 +27,4 @@ const DecisionBadge = ({ status, applicationNumber }) => {
 };
 
 export default DecisionBadge;
+

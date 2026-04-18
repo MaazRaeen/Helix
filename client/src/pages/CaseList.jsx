@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { Loader2, ArrowRight, CheckCircle2, XCircle, AlertCircle, Fingerprint } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-function CaseList({ onSelect }) {
+function CaseList() {
+    const navigate = useNavigate();
     const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -101,7 +103,7 @@ function CaseList({ onSelect }) {
                     <motion.div 
                         variants={itemVariants}
                         key={item._id}
-                        onClick={() => onSelect(item._id)}
+                        onClick={() => navigate(`/case/${item._id}`)}
                         whileHover={{ y: -8, transition: { duration: 0.2 } }}
                         className="glass rounded-[2rem] p-8 shadow-premium hover:shadow-glow hover:border-primary-400 group cursor-pointer relative overflow-hidden transition-all border-white/40"
                     >
@@ -187,3 +189,4 @@ function CaseList({ onSelect }) {
 }
 
 export default CaseList;
+

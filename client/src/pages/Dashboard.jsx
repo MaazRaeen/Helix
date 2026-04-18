@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { 
     Loader2, ArrowLeft, ArrowRight, ShieldCheck, ShieldAlert, 
-    FileText, Zap, HelpCircle, Save, Sliders, CheckCircle2,
-    Info, ExternalLink, ChevronRight, History, PlusCircle, Fingerprint
+    FileText, Zap, HelpCircle, Sliders, 
+    Info, ExternalLink, History, PlusCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -30,7 +31,9 @@ const AnimatedNumber = ({ value }) => {
     return <span>{displayValue.toFixed(1)}</span>;
 };
 
-function Dashboard({ caseId, onBack }) {
+function Dashboard() {
+    const { id } = useParams();
+    const navigate = useNavigate();
     const [caseData, setCaseData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -40,70 +43,38 @@ function Dashboard({ caseId, onBack }) {
 
     useEffect(() => {
         fetchCase();
-    }, [caseId]);
+    }, [id]);
 
     const fetchCase = async () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await api.get(`/cases/${caseId}`);
+            const res = await api.get(`/case/${id}`);
             if (!res.data) throw new Error("No data received");
             setCaseData(res.data);
+            // Dashboard currently expects a slightly different structure than DecisionPage
+            // We'll normalize these for the hackathon demo
+            const state = res.data.after_contest || res.data;
             setFormData({
-                income: res.data.updated_state.income,
-                credit_score: res.data.updated_state.credit_score,
-                employment_length: res.data.updated_state.employment_length,
-                existing_debt: res.data.updated_state.existing_debt,
-                bank_balance: res.data.updated_state.bank_balance
+                income: state.income || 0,
+                credit_score: state.credit_score || 0,
+                employment_length: 24,
+                existing_debt: state.existing_debt || 0,
+                bank_balance: 15000
             });
         } catch (error) {
-            console.error("Fetch case failed, falling back to mock dossier", error);
-            // Technical Robustness: Mock Fallback
-            const mockDossier = {
-                _id: caseId,
-                name: "Rahul Sharma",
-                income: 45000,
-                credit_score: 620,
-                employment_length: 12,
-                existing_debt: 20000,
-                bank_balance: 5000,
-                initial_result: { 
-                    decision: "REJECT", 
-                    probability: 0.42, 
-                    topFactors: [
-                        {feature: "credit_score", impact: "negative", contribution: -1.2},
-                        {feature: "existing_debt", impact: "negative", contribution: -0.8}
-                    ] 
-                },
-                updated_state: {
-                    income: 45000,
-                    credit_score: 620,
-                    employment_length: 12,
-                    existing_debt: 20000,
-                    bank_balance: 5000,
-                    decision: "REJECT",
-                    probability: 0.42
-                },
-                createdAt: new Date().toISOString()
-            };
-            setCaseData(mockDossier);
-            setFormData({
-                income: mockDossier.updated_state.income,
-                credit_score: mockDossier.updated_state.credit_score,
-                employment_length: mockDossier.updated_state.employment_length,
-                existing_debt: mockDossier.updated_state.existing_debt,
-                bank_balance: mockDossier.updated_state.bank_balance
-            });
+            console.error("Fetch case failed", error);
+            setError("The requested dossier could not be retrieved from the ledger.");
         } finally {
             setLoading(false);
         }
     };
 
     const handleUpdate = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setUpdating(true);
         try {
-            const res = await api.post(`/re-evaluate/${caseId}`, { updatedData: formData });
+            const res = await api.post(`/re-evaluate/${id}`, formData);
             setCaseData(res.data);
             setActiveTab('review');
         } catch (error) {
@@ -135,18 +106,34 @@ function Dashboard({ caseId, onBack }) {
                     <h3 className="text-xl font-display font-black text-slate-900 mb-2">Analysis Interrupted</h3>
                     <p className="text-slate-500 text-sm max-w-sm mb-8">{error || "The requested dossier could not be retrieved from the ledger."}</p>
                     <button 
-                        onClick={fetchCase}
+                        onClick={() => navigate('/explorer')}
                         className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-primary-600 transition-colors shadow-lg"
                     >
-                        Retry Connection
+                        Back to Explorer
                     </button>
                 </div>
             </div>
         );
     }
 
-    const initial = caseData.initial_result;
-    const current = caseData.updated_state;
+    // Mapping new schema to old component expectations
+    const initial = {
+        decision: caseData.decision || 'PENDING',
+        probability: caseData.confidence ? caseData.confidence / 100 : 0.5,
+        explanation: caseData.transparency_report || 'Awaiting reasoning...',
+        topFactors: caseData.contributions?.slice(0, 2).map(c => ({
+            feature: c.feature,
+            impact: c.direction,
+            contribution: c.shapValue
+        })) || []
+    };
+
+    const current = {
+        isContested: !!caseData.after_contest,
+        decision: caseData.after_contest?.decision || initial.decision,
+        probability: caseData.after_contest?.probability ? caseData.after_contest.probability / 100 : initial.probability,
+        explanation: caseData.after_contest?.rationale || initial.explanation
+    };
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -175,16 +162,15 @@ function Dashboard({ caseId, onBack }) {
             <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-200/50">
                 <div className="flex items-center gap-4 text-slate-400">
                     <button 
-                        onClick={onBack} 
+                        onClick={() => navigate('/explorer')} 
                         className="hover:text-primary-600 transition-all flex items-center gap-2 group font-black text-xs uppercase tracking-widest text-slate-500"
                     >
                         <div className="w-10 h-10 rounded-xl bg-white shadow-premium flex items-center justify-center group-hover:bg-primary-50 transition-colors">
                             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                         </div>
-                        Back
                     </button>
                     <div className="h-4 w-px bg-slate-200" />
-                    <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-lg text-slate-500">Case ID: {caseId.slice(-8).toUpperCase()}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest bg-slate-100 px-3 py-1.5 rounded-lg text-slate-500">Case ID: {id.slice(-8).toUpperCase()}</span>
                 </div>
                 
                 <div className="flex bg-white/60 backdrop-blur-md p-1.5 rounded-2xl border border-white/50 shadow-premium">
@@ -213,7 +199,6 @@ function Dashboard({ caseId, onBack }) {
                 
                 <div className="lg:col-span-8 space-y-10">
                     
-                    {/* Decision Comparison Delta Card */}
                     <motion.div 
                         variants={itemVariants}
                         layout
@@ -230,13 +215,12 @@ function Dashboard({ caseId, onBack }) {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2">
-                           {/* Initial */}
                            <div className="p-12 border-r border-white/20 bg-slate-50/20 relative group">
                                 <div className="absolute inset-0 bg-slate-100/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                                 <span className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-wider mb-8 border shadow-sm ${
-                                    initial.decision === 'APPROVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+                                    initial.decision === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
                                 }`}>
-                                   {initial.decision === 'APPROVE' ? <ShieldCheck size={16}/> : <ShieldAlert size={16}/>}
+                                   {initial.decision === 'Approved' ? <ShieldCheck size={16}/> : <ShieldAlert size={16}/>}
                                    Initial: {initial.decision}
                                 </span>
                                 <div className="flex items-baseline gap-3 relative z-10">
@@ -269,7 +253,6 @@ function Dashboard({ caseId, onBack }) {
                                 </div>
                            </div>
 
-                           {/* Simulated Output */}
                            <div className="p-12 relative group overflow-hidden bg-white/10">
                                 <div className="absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r from-primary-600 to-accent animate-pulse" />
                                 
@@ -279,10 +262,10 @@ function Dashboard({ caseId, onBack }) {
                                         animate={{ opacity: 1, scale: 1 }}
                                     >
                                         <span className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-wider mb-8 border shadow-lg ${
-                                            current.decision === 'APPROVE' ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-200' : 'bg-rose-500 text-white border-rose-400 shadow-rose-200'
+                                            current.decision === 'Approved' ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-200' : 'bg-rose-500 text-white border-rose-400 shadow-rose-200'
                                         }`}>
-                                            {current.decision === 'APPROVE' ? <ShieldCheck size={16}/> : <ShieldAlert size={16}/>}
-                                            Simulated: {current.decision}
+                                            {current.decision === 'Approved' ? <ShieldCheck size={16}/> : <ShieldAlert size={16}/>}
+                                            Final Outcome: {current.decision}
                                         </span>
                                         <div className="flex items-baseline gap-3 relative z-10">
                                             <h4 className="text-8xl font-display font-black text-primary-700 tracking-tighter leading-none">
@@ -356,45 +339,6 @@ function Dashboard({ caseId, onBack }) {
                                         {initial.explanation}
                                     </p>
                                 </div>
-
-                                {caseData.counterfactuals && (
-                                    <motion.div 
-                                        whileHover={{ scale: 1.01 }}
-                                        className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group shadow-primary-900/20"
-                                    >
-                                        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary-600/30 blur-[120px] rounded-full animate-float" />
-                                        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary-600 to-accent" />
-                                        
-                                        <div className="relative z-10">
-                                            <div className="flex items-center gap-4 mb-12">
-                                                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-xl shadow-xl"><Zap size={28} className="text-primary-400 stroke-[2.5]" /></div>
-                                                <h3 className="text-3xl font-display font-black tracking-tight text-white border-b-4 border-primary-500 pb-1">Success Strategy</h3>
-                                            </div>
-                                            
-                                            <div className="bg-white/10 backdrop-blur-2xl rounded-[3rem] p-10 border border-white/20 shadow-inner">
-                                                <p className="text-white text-base font-black italic mb-10 leading-relaxed border-l-4 border-primary-400 pl-8">"{caseData.counterfactuals.ai_advice}"</p>
-                                                
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    {caseData.counterfactuals.suggestions.map((s, i) => (
-                                                        <motion.div 
-                                                            key={i} 
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            transition={{ delay: i * 0.1 }}
-                                                            className="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-white/5"
-                                                        >
-                                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{s.feature.replace('_', ' ')}</span>
-                                                            <div className="flex justify-between items-end">
-                                                                <span className="text-lg font-black text-primary-400 tracking-tight">₹{s.requiredValue.toLocaleString()}</span>
-                                                                <ArrowRight size={16} className="text-primary-600 mb-1" />
-                                                            </div>
-                                                        </motion.div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
                             </motion.div>
                         ) : (
                             <motion.div 
@@ -412,13 +356,6 @@ function Dashboard({ caseId, onBack }) {
                                         <div className="w-10 h-10 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-100"><Sliders size={22}/></div>
                                         <h3 className="text-2xl font-display font-black tracking-tight">Contest Decision Factors</h3>
                                     </div>
-                                    <motion.div 
-                                        animate={{ opacity: [0.5, 1, 0.5] }}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                        className="text-[9px] font-black text-white bg-primary-600 px-4 py-1.5 rounded-full uppercase tracking-widest shadow-glow"
-                                    >
-                                        Simulation Link: Stable
-                                    </motion.div>
                                 </div>
 
                                 <form onSubmit={handleUpdate} className="space-y-10 relative z-10">
@@ -433,27 +370,10 @@ function Dashboard({ caseId, onBack }) {
                                                         onChange={(e) => setFormData({...formData, [key]: Number(e.target.value)})}
                                                         className="w-full bg-white/50 border border-slate-200 rounded-[1.25rem] px-6 py-4 text-sm font-black focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all shadow-sm"
                                                     />
-                                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 font-bold text-[10px] uppercase">Edit</div>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-
-                                    <motion.div 
-                                        whileHover={{ borderColor: 'var(--primary)' }}
-                                        className="bg-white/30 border-2 border-dashed border-slate-200 rounded-[2rem] p-12 text-center group cursor-pointer transition-all"
-                                    >
-                                        <div className="flex flex-col items-center">
-                                            <motion.div 
-                                                whileHover={{ rotate: 90, scale: 1.1 }}
-                                                className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-premium text-primary-600 mb-4 border border-white group-hover:bg-primary-600 group-hover:text-white transition-all"
-                                            >
-                                                <PlusCircle size={32} />
-                                            </motion.div>
-                                            <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Attach Evidence</p>
-                                            <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Secure TLS-encrypted upload channel</p>
-                                        </div>
-                                    </motion.div>
 
                                     <motion.button 
                                         whileHover={{ scale: 1.02 }}
@@ -471,18 +391,13 @@ function Dashboard({ caseId, onBack }) {
                     </AnimatePresence>
                 </div>
 
-                {/* Right Side: Case Details / Sidebar */}
                 <div className="lg:col-span-4 space-y-10">
                     <motion.div 
                         variants={itemVariants}
-                        className="glass border-white/40 rounded-[3rem] p-8 shadow-premium"
+                        className="glass border-white/60 rounded-[3rem] p-8 shadow-premium"
                     >
                         <h4 className="font-display font-black text-slate-900 border-b-2 border-slate-200 pb-8 mb-8 uppercase tracking-[0.3em] text-sm">Application Dossier</h4>
                         <div className="space-y-8">
-                            <div className="flex justify-between items-center group/item p-4 hover:bg-slate-50 rounded-2xl transition-colors">
-                                <span className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] group-hover/item:text-primary-600 transition-colors">Borrower ID</span>
-                                <span className="text-sm font-black text-slate-900 tracking-tight">{caseData.name}</span>
-                            </div>
                             <div className="flex justify-between items-center group/item p-4 hover:bg-slate-50 rounded-2xl transition-colors">
                                 <span className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] group-hover/item:text-primary-600 transition-colors">Filing Date</span>
                                 <span className="text-sm font-black text-slate-900 tracking-tight">{new Date(caseData.createdAt).toLocaleDateString()}</span>

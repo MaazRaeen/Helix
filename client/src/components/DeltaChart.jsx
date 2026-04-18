@@ -90,3 +90,4 @@ const DeltaChart = ({ data }) => {
 };
 
 export default DeltaChart;
+

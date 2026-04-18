@@ -42,3 +42,4 @@ const FeatureImpactTable = ({ data }) => {
 };
 
 export default FeatureImpactTable;
+

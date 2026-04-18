@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useApplication } from '../context/ApplicationContext';
 
-const ApplicationPage = ({ onComplete }) => {
+const ApplicationPage = () => {
+  const navigate = useNavigate();
+  const { setCurrentApplicationId, setLatestResult } = useApplication();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     income: '',
@@ -22,12 +27,35 @@ const ApplicationPage = ({ onComplete }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      onComplete();
-    }, 1500);
+    
+    try {
+      // Map frontend fields to backend expected fields
+      const payload = {
+        income: parseFloat(formData.income),
+        credit_score: parseFloat(formData.creditScore),
+        employment_length: 24, // Default for demo
+        existing_debt: parseFloat(formData.debts),
+        bank_balance: 15000, // Default for demo
+        loan_amount: parseFloat(formData.loanAmount)
+      };
+
+      const response = await axios.post('http://localhost:5070/api/predict', payload);
+      const data = response.data;
+      
+      setCurrentApplicationId(data._id);
+      setLatestResult(data);
+      
+      // Navigate to the decision page with the new case ID
+      navigate(`/decision/${data._id}`);
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("System connection failed. Please ensure the Governance Server is active.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const calculateDTI = () => {
@@ -61,7 +89,6 @@ const ApplicationPage = ({ onComplete }) => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-accent/5 blur-[100px] -mr-32 -mt-32" />
           
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
-            {/* Row 1 */}
             <div className="flex flex-col gap-3 group">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Monthly Income (₹)</label>
               <input 
@@ -88,7 +115,6 @@ const ApplicationPage = ({ onComplete }) => {
               <p className="text-[10px] text-slate-400 font-bold ml-1 italic">Min: 300 | Max: 850</p>
             </div>
 
-            {/* Row 2 */}
             <div className="flex flex-col gap-3 group">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Employment Status</label>
               <select 
@@ -122,7 +148,6 @@ const ApplicationPage = ({ onComplete }) => {
               </div>
             </div>
 
-            {/* Row 3 */}
             <div className="flex flex-col gap-3 group">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Loan Amount (₹)</label>
               <input 
@@ -147,7 +172,6 @@ const ApplicationPage = ({ onComplete }) => {
               />
             </div>
 
-            {/* Footer */}
             <div className="md:col-span-2 flex flex-col md:flex-row items-center justify-between gap-6 mt-8 pt-10 border-t border-slate-100">
               <div className="flex items-center gap-3 text-slate-400 text-[12px] font-bold italic">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -186,7 +210,6 @@ const ApplicationPage = ({ onComplete }) => {
             <h3 className="label mb-8 pb-4 border-b border-slate-100">Live Simulation Status</h3>
             
             <div className="space-y-10">
-              {/* DTI */}
               <div className="space-y-3">
                 <div className="flex justify-between items-end">
                   <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">DTI Ratio</span>
@@ -203,7 +226,6 @@ const ApplicationPage = ({ onComplete }) => {
                 <p className="text-[10px] font-bold text-slate-400 italic">Target: Below 40%</p>
               </div>
 
-              {/* Loan Multiplier */}
               <div className="space-y-3">
                 <div className="flex justify-between items-end">
                   <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Multiplier</span>
@@ -220,7 +242,6 @@ const ApplicationPage = ({ onComplete }) => {
                 <p className="text-[10px] font-bold text-slate-400 italic">Target: Below 10x</p>
               </div>
 
-              {/* Monthly EMI */}
               <div className="pt-8 border-t border-slate-100">
                 <div className="flex justify-between items-center">
                   <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Estimated EMI</span>
@@ -229,7 +250,6 @@ const ApplicationPage = ({ onComplete }) => {
                 <p className="text-[10px] font-bold text-slate-400 mt-2 italic px-3 py-1 bg-slate-50 rounded-lg inline-block">Estimated @ 8.5% p.a.</p>
               </div>
 
-              {/* Quick Checks */}
               <div className="space-y-4 pt-8 border-t border-slate-100">
                 {[
                   { label: 'Income Threshold', status: formData.income >= 25000 },

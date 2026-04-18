@@ -59,3 +59,4 @@ const ConfidenceGauge = ({ confidence, status }) => {
 };
 
 export default ConfidenceGauge;
+

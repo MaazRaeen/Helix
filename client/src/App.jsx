@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import api from './utils/api';
+import React, { useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import CaseList from './pages/CaseList';
 import Sidebar from './components/Sidebar';
@@ -11,29 +11,7 @@ import InnovationManifesto from './pages/InnovationManifesto';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
-    const [view, setView] = useState('manifesto'); // 'list', 'dashboard', 'applicant-flow', or 'manifesto'
-    const [selectedCaseId, setSelectedCaseId] = useState(null);
-    const [applicantStage, setApplicantStage] = useState('application'); // 'application', 'decision', 'contest', 'delta'
-
-    const handleSelectCase = (id) => {
-        setSelectedCaseId(id);
-        setView('dashboard');
-    };
-
-    const renderApplicantFlow = () => {
-        switch (applicantStage) {
-            case 'application':
-                return <ApplicationPage onComplete={() => setApplicantStage('decision')} />;
-            case 'decision':
-                return <DecisionPage onContest={() => setApplicantStage('contest')} onNew={() => setApplicantStage('application')} />;
-            case 'contest':
-                return <ContestPage onBack={() => setApplicantStage('decision')} onComplete={() => setApplicantStage('delta')} />;
-            case 'delta':
-                return <DeltaPage onNew={() => setApplicantStage('application')} />;
-            default:
-                return <ApplicationPage onComplete={() => setApplicantStage('decision')} />;
-        }
-    };
+    const location = useLocation();
 
     return (
         <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900 relative">
@@ -46,68 +24,105 @@ function App() {
             <div className="fixed bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-accent/10 rounded-full blur-[160px] animate-float pointer-events-none" style={{ animationDelay: '-8s' }} />
             <div className="fixed top-[40%] left-[20%] w-[20vw] h-[20vw] bg-indigo-400/10 rounded-full blur-[120px] animate-float pointer-events-none" style={{ animationDelay: '-12s' }} />
 
-            <Sidebar currentView={view} onViewChange={setView} />
+            <Sidebar />
 
             <main className="flex-1 h-screen overflow-y-auto relative z-10 scroll-smooth">
                 {/* Content Container */}
                 <div className="max-w-[1400px] mx-auto p-12 lg:p-16">
                     <AnimatePresence mode="wait">
-                        {view === 'list' ? (
-                            <motion.div
-                                key="list"
-                                initial={{ opacity: 0, scale: 0.99, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 1.01, y: -10 }}
-                                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                                className="w-full"
-                            >
-                                <div className="mb-12">
-                                    <h2 className="text-4xl font-display font-black tracking-tight text-slate-900 mb-2">
-                                        Case Explorer
-                                    </h2>
-                                    <p className="text-slate-500 font-medium max-w-2xl">
-                                        Real-time decision pipeline for the Governance Engine. Review, analyze, and contest AI-driven approvals.
-                                    </p>
-                                </div>
-                                <CaseList onSelect={handleSelectCase} />
-                            </motion.div>
-                        ) : view === 'dashboard' ? (
-                            <motion.div
-                                key="dashboard"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                                className="w-full"
-                            >
-                                <Dashboard 
-                                    caseId={selectedCaseId} 
-                                    onBack={() => setView('list')} 
-                                />
-                            </motion.div>
-                        ) : view === 'manifesto' ? (
-                            <motion.div
-                                key="manifesto"
-                                initial={{ opacity: 0, y: 40 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -40 }}
-                                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                                className="w-full"
-                            >
-                                <InnovationManifesto onStart={() => setView('applicant-flow')} />
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="applicant-flow"
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -30 }}
-                                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                                className="w-full"
-                            >
-                                {renderApplicantFlow()}
-                            </motion.div>
-                        )}
+                        <Routes location={location} key={location.pathname}>
+                            <Route path="/" element={
+                                <motion.div
+                                    initial={{ opacity: 0, y: 40 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -40 }}
+                                    transition={{ duration: 0.7 }}
+                                    className="w-full"
+                                >
+                                    <InnovationManifesto />
+                                </motion.div>
+                            } />
+                            
+                            <Route path="/explorer" element={
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.99, y: 10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 1.01, y: -10 }}
+                                    transition={{ duration: 0.4 }}
+                                    className="w-full"
+                                >
+                                    <div className="mb-12">
+                                        <h2 className="text-4xl font-display font-black tracking-tight text-slate-900 mb-2">
+                                            Case Explorer
+                                        </h2>
+                                        <p className="text-slate-500 font-medium max-w-2xl">
+                                            Real-time decision pipeline for the Governance Engine. Review, analyze, and contest AI-driven approvals.
+                                        </p>
+                                    </div>
+                                    <CaseList />
+                                </motion.div>
+                            } />
+
+                            <Route path="/case/:id" element={
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.5 }}
+                                    className="w-full"
+                                >
+                                    <Dashboard />
+                                </motion.div>
+                            } />
+
+                            <Route path="/apply" element={
+                                <motion.div
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -30 }}
+                                    transition={{ duration: 0.6 }}
+                                    className="w-full"
+                                >
+                                    <ApplicationPage />
+                                </motion.div>
+                            } />
+
+                            <Route path="/decision/:id" element={
+                                <motion.div
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -30 }}
+                                    transition={{ duration: 0.6 }}
+                                    className="w-full"
+                                >
+                                    <DecisionPage />
+                                </motion.div>
+                            } />
+
+                            <Route path="/contest/:id" element={
+                                <motion.div
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -30 }}
+                                    transition={{ duration: 0.6 }}
+                                    className="w-full"
+                                >
+                                    <ContestPage />
+                                </motion.div>
+                            } />
+
+                            <Route path="/delta/:id" element={
+                                <motion.div
+                                    initial={{ opacity: 0, y: 30 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -30 }}
+                                    transition={{ duration: 0.6 }}
+                                    className="w-full"
+                                >
+                                    <DeltaPage />
+                                </motion.div>
+                            } />
+                        </Routes>
                     </AnimatePresence>
                 </div>
                 

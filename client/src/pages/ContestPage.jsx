@@ -1,21 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import ConflictModal from '../components/ConflictModal';
 import ProcessingAnimation from '../components/ProcessingAnimation';
 import { ArrowLeft, ArrowRight, ShieldCheck, Zap, Info, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ContestPage = ({ onBack, onComplete }) => {
+const ContestPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [file, setFile] = useState(null);
   const [formData, setFormData] = useState({
-    income: '28000',
-    creditScore: '580',
-    employment: 'Employed (Salaried)',
-    loanAmount: '200000',
-    debts: '8000',
+    income: '',
+    creditScore: '',
+    employment: '',
+    loanAmount: '',
+    debts: '',
     reason: ''
   });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5070/api/case/${id}`);
+        const data = response.data;
+        setFormData({
+          income: data.income.toString(),
+          creditScore: data.credit_score.toString(),
+          employment: 'Employed (Salaried)', // Mocked default
+          loanAmount: data.loan_amount.toString(),
+          debts: data.existing_debt.toString(),
+          reason: ''
+        });
+      } catch (error) {
+        console.error("Error fetching case for contestation:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
 
   const handleFileUpload = (e) => {
     const uploadedFile = e.target.files[0];
@@ -34,13 +61,42 @@ const ContestPage = ({ onBack, onComplete }) => {
     setIsModalOpen(false);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
     setIsProcessing(true);
+    
+    try {
+      // Construct updated payload
+      const payload = {
+        income: parseFloat(formData.income),
+        credit_score: parseFloat(formData.creditScore),
+        existing_debt: parseFloat(formData.debts),
+        loan_amount: parseFloat(formData.loanAmount)
+      };
+
+      // Call re-evaluate endpoint
+      await axios.post(`http://localhost:5070/api/re-evaluate/${id}`, payload);
+      
+      // Navigate to delta after animation completes
+      // Navigation happens in the ProcessingAnimation callback
+    } catch (error) {
+      console.error("Re-evaluation failed:", error);
+      alert("Neural appeal failed to transmit. Please check server logs.");
+      setIsProcessing(false);
+    }
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="animate-spin h-12 w-12 border-4 border-primary-600/20 border-t-primary-600 rounded-full" />
+        <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Preparing Contestation Sandbox...</p>
+      </div>
+    );
+  }
+
   if (isProcessing) {
-    return <ProcessingAnimation onComplete={onComplete} />;
+    return <ProcessingAnimation onComplete={() => navigate(`/delta/${id}`)} />;
   }
 
   return (
@@ -53,7 +109,7 @@ const ContestPage = ({ onBack, onComplete }) => {
 
       <div className="flex flex-col gap-4 border-b border-slate-100 pb-10">
         <button 
-          onClick={onBack}
+          onClick={() => navigate(`/decision/${id}`)}
           className="text-primary-accent text-[12px] font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:translate-x-[-4px] transition-transform w-fit mb-4"
         >
           <ArrowLeft size={16} strokeWidth={3} />
@@ -94,9 +150,6 @@ const ContestPage = ({ onBack, onComplete }) => {
                   value={formData.income}
                   onChange={(e) => setFormData({...formData, income: e.target.value})}
                 />
-                <p className="text-[10px] text-rejected font-black flex items-center gap-1.5 px-2">
-                  <Zap size={10} /> CURRENTLY BEYOND THRESHOLD
-                </p>
               </div>
 
               {/* Credit Score - High Impact */}
@@ -111,9 +164,6 @@ const ContestPage = ({ onBack, onComplete }) => {
                   value={formData.creditScore}
                   onChange={(e) => setFormData({...formData, creditScore: e.target.value})}
                 />
-                <p className="text-[10px] text-rejected font-black flex items-center gap-1.5 px-2">
-                   <Zap size={10} /> 70 PTS BELOW MINIMUM
-                </p>
               </div>
 
               {/* Employment - Medium Impact */}
@@ -165,7 +215,6 @@ const ContestPage = ({ onBack, onComplete }) => {
                     <p className="text-xl font-black text-slate-900 tracking-tight">Drag & drop evidence</p>
                     <p className="text-[12px] text-primary-accent font-black uppercase tracking-widest underline mt-2">or select files manually</p>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest px-4 py-1.5 bg-slate-50 rounded-lg">PDF, JPG, PNG • Max 5MB</p>
                 </div>
                 <input type="file" className="hidden" onChange={handleFileUpload} />
               </label>
@@ -200,9 +249,6 @@ const ContestPage = ({ onBack, onComplete }) => {
                 value={formData.reason}
                 onChange={(e) => setFormData({...formData, reason: e.target.value})}
               />
-              <div className="flex justify-end pr-2 font-black text-[10px] text-slate-300 uppercase tracking-widest">
-                {formData.reason.length} / 500 characters
-              </div>
             </div>
           </div>
         </div>
@@ -222,7 +268,7 @@ const ContestPage = ({ onBack, onComplete }) => {
         </div>
         
         <div className="flex gap-4">
-          <button onClick={onBack} className="btn-outline px-10 py-5 text-sm uppercase">Cancel</button>
+          <button onClick={() => navigate(`/decision/${id}`)} className="btn-outline px-10 py-5 text-sm uppercase">Cancel</button>
           <button 
             onClick={handleSubmit}
             className="btn-primary px-12 py-5 text-sm flex items-center gap-3 relative group overflow-hidden"

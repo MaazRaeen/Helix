@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
     Sparkles, ShieldAlert, Cpu, 
@@ -7,7 +8,8 @@ import {
     RotateCcw, Fingerprint, HelpCircle
 } from 'lucide-react';
 
-const InnovationManifesto = ({ onStart }) => {
+const InnovationManifesto = () => {
+    const navigate = useNavigate();
     const sections = [
         {
             icon: <Fingerprint className="text-primary-600" size={40} />,
@@ -62,7 +64,7 @@ const InnovationManifesto = ({ onStart }) => {
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <button 
-                            onClick={onStart}
+                            onClick={() => navigate('/apply')}
                             className="btn-primary w-full sm:w-auto px-12 py-5 text-lg group shadow-2xl ring-offset-4 ring-offset-slate-50 ring-4 ring-primary-600/10"
                         >
                             Explore the Interface
