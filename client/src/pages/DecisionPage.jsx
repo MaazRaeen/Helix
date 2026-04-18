@@ -3,7 +3,7 @@ import DecisionBadge from '../components/DecisionBadge';
 import ConfidenceGauge from '../components/ConfidenceGauge';
 import SHAPChart from '../components/SHAPChart';
 import FeatureImpactTable from '../components/FeatureImpactTable';
-import { Info, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Info, ArrowLeft, ArrowRight, Zap, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DecisionPage = ({ onContest, onNew }) => {
@@ -47,7 +47,10 @@ const DecisionPage = ({ onContest, onNew }) => {
               <Info size={28} strokeWidth={2.5} />
             </div>
             <div className="space-y-4">
-               <h4 className="text-[13px] font-black uppercase tracking-widest text-rejected">Decision Logic Narrative</h4>
+               <div className="flex items-center gap-2">
+                 <h4 className="text-[13px] font-black uppercase tracking-widest text-rejected">Transparency Insight</h4>
+                 <span className="bg-rejected/10 text-rejected text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Gemini 3 Flash</span>
+               </div>
                <p className="text-[15px] leading-relaxed text-slate-700 font-medium">
                 Rejected because your <span className="font-black text-rejected border-b-2 border-rejected/20">credit score (580)</span> is below the 650 threshold [impact: 42%] and your <span className="font-black text-rejected border-b-2 border-rejected/20">monthly income (₹28,000)</span> is below the ₹40,000 minimum [impact: 34%].
               </p>
@@ -93,6 +96,39 @@ const DecisionPage = ({ onContest, onNew }) => {
                 </motion.div>
               )}
             </AnimatePresence>
+          </div>
+
+          {/* New Advisor Section */}
+          <div className="w-full bg-slate-900 text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-6 text-white/10 group-hover:text-primary-accent/20 transition-colors">
+                <Lightbulb size={80} />
+             </div>
+             <div className="relative z-10">
+               <div className="flex items-center gap-3 mb-6">
+                 <div className="w-10 h-10 bg-primary-accent rounded-xl flex items-center justify-center">
+                    <Zap size={20} className="text-white" />
+                 </div>
+                 <div>
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-400">Advisor Engine</h4>
+                   <p className="text-sm font-black">Path to Approval</p>
+                 </div>
+               </div>
+               
+               <p className="text-xs text-slate-400 font-medium mb-4 leading-relaxed">
+                 Helix has determined the minimal changes required to reverse this decision:
+               </p>
+               
+               <ul className="space-y-3">
+                 <li className="flex items-center gap-3 text-xs font-bold">
+                   <div className="w-1.5 h-1.5 rounded-full bg-primary-accent" />
+                   Increase Monthly Income by +₹12,000
+                 </li>
+                 <li className="flex items-center gap-3 text-xs font-bold">
+                   <div className="w-1.5 h-1.5 rounded-full bg-primary-accent" />
+                   Reduce Loan Multiplier to 4.5x
+                 </li>
+               </ul>
+             </div>
           </div>
         </div>
 

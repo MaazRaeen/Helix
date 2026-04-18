@@ -23,8 +23,9 @@
   --muted: #64748b;
   
   --bg-mesh: #f8fafc;
-  --glass-bg: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --shadow-glow: 0 0 30px 0 rgba(79, 70, 229, 0.3);
 }
 
 * {
@@ -117,4 +118,35 @@ h1, h2, h3, h4, .font-display {
 
 .label {
   @apply text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2;
+}
+
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+.sidebar-item-active {
+  background: linear-gradient(to right, rgba(79, 70, 229, 0.05), transparent);
+}
+
+.bg-dot-pattern {
+  background-image: radial-gradient(#475569 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Custom Scrollbar for Premium Feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }

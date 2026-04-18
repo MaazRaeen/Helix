@@ -7,10 +7,11 @@ import ApplicationPage from './pages/ApplicationPage';
 import DecisionPage from './pages/DecisionPage';
 import ContestPage from './pages/ContestPage';
 import DeltaPage from './pages/DeltaPage';
+import InnovationManifesto from './pages/InnovationManifesto';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
-    const [view, setView] = useState('list'); // 'list', 'dashboard', or 'applicant-flow'
+    const [view, setView] = useState('manifesto'); // 'list', 'dashboard', 'applicant-flow', or 'manifesto'
     const [selectedCaseId, setSelectedCaseId] = useState(null);
     const [applicantStage, setApplicantStage] = useState('application'); // 'application', 'decision', 'contest', 'delta'
 
@@ -83,6 +84,17 @@ function App() {
                                     caseId={selectedCaseId} 
                                     onBack={() => setView('list')} 
                                 />
+                            </motion.div>
+                        ) : view === 'manifesto' ? (
+                            <motion.div
+                                key="manifesto"
+                                initial={{ opacity: 0, y: 40 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -40 }}
+                                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                                className="w-full"
+                            >
+                                <InnovationManifesto onStart={() => setView('applicant-flow')} />
                             </motion.div>
                         ) : (
                             <motion.div

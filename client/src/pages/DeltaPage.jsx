@@ -30,17 +30,20 @@ const DeltaPage = ({ onNew }) => {
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-approved/5 blur-[100px] -mr-32 -mt-32" />
         
-        <div className="flex flex-col gap-3 relative z-10">
-          <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md w-fit px-4 py-1.5 rounded-full border border-white">
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Appeal Status</span>
-             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Finalized</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 bg-white/60 backdrop-blur-md w-fit px-4 py-1.5 rounded-full border border-white">
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Decision Delta</span>
+               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Verified transformation</span>
+            </div>
+            <div className="bg-emerald-900 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
+               Gemini 3 Flash Powered
+            </div>
           </div>
           <h1 className="text-5xl font-display font-black text-emerald-900 tracking-tight leading-none">Appeal Successful!</h1>
           <p className="text-emerald-700 text-lg font-black opacity-80 max-w-xl leading-relaxed">
-            Case information synchronized. The neural model has reversed the original decision based on verified financial evidence.
+            The contestation layer has successfully forced a re-evaluation. Verified evidence has reversed the historical authority.
           </p>
-        </div>
         
         <div className="w-28 h-28 bg-approved rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl shadow-approved/40 shrink-0 relative group">
           <motion.div 
@@ -102,8 +105,10 @@ const DeltaPage = ({ onNew }) => {
 
       {/* NARRATIVE SECTION */}
       <section className="space-y-8">
-        <h2 className="label text-slate-400 tracking-[0.4em]">Integrated Reasoning Protocol</h2>
-        <div className="bg-white border-2 border-slate-100 rounded-[3rem] p-10 shadow-card border-l-8 border-l-approved">
+        <div className="bg-white border-2 border-slate-100 rounded-[3rem] p-10 shadow-card border-l-8 border-l-approved relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-4">
+              <span className="text-[9px] font-black text-approved/20 uppercase tracking-[0.3em]">AI Reasoning via Gemini 3 Flash Preview</span>
+           </div>
            <p className="text-slate-700 text-xl font-black leading-relaxed italic border-l-4 border-slate-100 pl-8 ml-2">
              "{dummyDelta.narrative}"
            </p>

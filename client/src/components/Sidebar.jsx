@@ -2,7 +2,7 @@ import React from 'react';
 import { 
     Layout, Search, PlusCircle, History, 
     Settings, HelpCircle, User, Fingerprint,
-    LogOut, Bell, Shield, ChevronRight
+    LogOut, Bell, Shield, ChevronRight, Award
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -57,6 +57,12 @@ const Sidebar = ({ currentView, onViewChange }) => {
                 <div className="px-10 pb-4">
                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Operational</p>
                 </div>
+                <SidebarItem 
+                    icon={Award} 
+                    label="Innovation Lab" 
+                    active={currentView === 'manifesto'} 
+                    onClick={() => onViewChange('manifesto')} 
+                />
                 <SidebarItem 
                     icon={Search} 
                     label="Executive Explorer" 
@@ -116,6 +122,12 @@ const Sidebar = ({ currentView, onViewChange }) => {
                         <HelpCircle size={14} className="stroke-[2.5]" />
                         Support
                     </button>
+                </div>
+                
+                <div className="mt-8 pt-6 border-t border-slate-200/50">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-relaxed">
+                        "AI should not be final, it should be challengeable."
+                    </p>
                 </div>
             </div>
         </aside>
