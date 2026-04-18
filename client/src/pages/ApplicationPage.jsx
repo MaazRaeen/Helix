@@ -91,7 +91,18 @@ const ApplicationPage = () => {
     return ((monthlyDebts / monthlyIncome) * 100).toFixed(1);
   };
 
+  const calculateEMI = () => {
+    const P = parseFloat(formData.loanAmount) || 0;
+    const annualRate = 8.5;
+    const r = annualRate / 12 / 100; // monthly interest rate
+    const n = parseFloat(formData.loanTerm) || 360; // months
+    if (P === 0 || r === 0) return 0;
+    const emi = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    return Math.round(emi);
+  };
+
   const dti = calculateDTI();
+  const emi = calculateEMI();
   const loanMultiplier = formData.income > 0 ? (formData.loanAmount / formData.income).toFixed(1) : 0;
 
   return (
@@ -353,9 +364,9 @@ const ApplicationPage = () => {
               <div className="pt-8 border-t border-slate-100">
                 <div className="flex justify-between items-center">
                   <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Estimated EMI</span>
-                  <span className="text-3xl font-black text-slate-900 tracking-tighter">₹6,420</span>
+                  <span className="text-3xl font-black text-slate-900 tracking-tighter">₹{emi.toLocaleString('en-IN')}</span>
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 mt-2 italic px-3 py-1 bg-slate-50 rounded-lg inline-block">Estimated @ 8.5% p.a.</p>
+                <p className="text-[10px] font-bold text-slate-400 mt-2 italic px-3 py-1 bg-slate-50 rounded-lg inline-block">Estimated @ 8.5% p.a. for {formData.loanTerm} months</p>
               </div>
 
               <div className="space-y-4 pt-8 border-t border-slate-100">
