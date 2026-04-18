@@ -91,7 +91,7 @@ const LedgerPage = () => {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.05 }}
                                     className="hover:bg-slate-50 transition-colors group cursor-pointer"
-                                    onClick={() => navigate(`/case/${item._id}`)}
+                                    onClick={() => navigate(`/decision/${item._id}`)}
                                 >
                                     <td className="px-10 py-8">
                                         <p className="text-sm font-black text-slate-900 leading-none mb-1">
@@ -129,7 +129,13 @@ const LedgerPage = () => {
                                         </div>
                                     </td>
                                     <td className="px-10 py-8 text-right">
-                                        <button className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-primary-600 hover:border-primary-600 transition-all shadow-sm">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/decision/${item._id}`);
+                                            }}
+                                            className="p-3 bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-primary-600 hover:border-primary-600 transition-all shadow-sm"
+                                        >
                                             <ExternalLink size={18} />
                                         </button>
                                     </td>

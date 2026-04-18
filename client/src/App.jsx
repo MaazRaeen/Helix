@@ -75,7 +75,7 @@ function App() {
                                     transition={{ duration: 0.5 }}
                                     className="w-full"
                                 >
-                                    <Dashboard />
+                                    <DecisionPage />
                                 </motion.div>
                             } />
 

@@ -285,6 +285,47 @@ const ContestPage = () => {
                 </select>
               </div>
 
+              {/* Self Employed */}
+              <div className="flex flex-col gap-3 group">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Self Employed</label>
+                <div className="flex gap-2">
+                  {['Yes', 'No'].map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setFormData({...formData, self_employed: v})}
+                      className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${
+                        formData.self_employed === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-100'
+                      }`}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Loan Term */}
+              <div className="flex flex-col gap-3 group">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Loan Term (Months)</label>
+                <input 
+                  type="number" 
+                  className="input-base"
+                  value={formData.loanTerm}
+                  onChange={(e) => setFormData({...formData, loanTerm: e.target.value})}
+                />
+              </div>
+
+              {/* Existing Debt */}
+              <div className="flex flex-col gap-3 group">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Existing Debt (₹)</label>
+                <input 
+                  type="number" 
+                  className="input-base"
+                  value={formData.debts}
+                  onChange={(e) => setFormData({...formData, debts: e.target.value})}
+                />
+              </div>
+
             </div>
           </form>
         </div>
