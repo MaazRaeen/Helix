@@ -2,9 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const SHAPChart = ({ data }) => {
-  // Find max value to scale the bars
-  const maxVal = Math.max(...data.map(d => Math.abs(d.shapValue)));
+  if (!data || data.length === 0) return null;
   
+  // Use 'contribution' field from backend (not 'shapValue')
+  const maxVal = Math.max(...data.map(d => Math.abs(d.contribution || 0)));
+  
+  if (maxVal === 0) return null;
+
   return (
     <div className="w-full space-y-8 py-6">
       <div className="flex justify-between items-center bg-slate-50 px-6 py-4 rounded-xl border border-slate-100">
@@ -20,8 +24,9 @@ const SHAPChart = ({ data }) => {
 
       <div className="space-y-6">
         {data.map((item, idx) => {
-          const isPositive = item.shapValue > 0;
-          const barWidth = (Math.abs(item.shapValue) / maxVal) * 100;
+          const contribution = item.contribution || 0;
+          const isPositive = contribution > 0;
+          const barWidth = Math.min((Math.abs(contribution) / maxVal) * 100, 100);
           
           return (
             <div key={idx} className="relative h-12 flex items-center">
@@ -34,7 +39,7 @@ const SHAPChart = ({ data }) => {
                    <div className="flex-1 flex justify-end pr-px">
                      {!isPositive && (
                        <motion.div
-                         initial={{ width: 0 }}
+                         initial={{ width: "0%" }}
                          animate={{ width: `${barWidth}%` }}
                          transition={{ duration: 0.8, delay: idx * 0.1 }}
                          className="h-full bg-rejected/80 rounded-l-lg border-y border-l border-rejected/20"
@@ -46,7 +51,7 @@ const SHAPChart = ({ data }) => {
                    <div className="flex-1 flex justify-start pl-px">
                      {isPositive && (
                        <motion.div
-                         initial={{ width: 0 }}
+                         initial={{ width: "0%" }}
                          animate={{ width: `${barWidth}%` }}
                          transition={{ duration: 0.8, delay: idx * 0.1 }}
                          className="h-full bg-approved/80 rounded-r-lg border-y border-r border-approved/20"
