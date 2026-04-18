@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { Loader2, ArrowRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Loader2, ArrowRight, CheckCircle2, XCircle, AlertCircle, Fingerprint } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function CaseList({ onSelect }) {
@@ -58,78 +58,130 @@ function CaseList({ onSelect }) {
         fetchCases();
     }, []);
 
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { 
+            opacity: 1, 
+            y: 0,
+            transition: { type: 'spring', stiffness: 300, damping: 24 }
+        }
+    };
+
     if (loading) {
         return (
-            <div className="h-96 flex flex-col items-center justify-center gap-4">
-                <Loader2 className="animate-spin text-primary-500" size={40} />
-                <p className="text-corporate-muted font-medium">Loading Case Repository...</p>
+            <div className="h-96 flex flex-col items-center justify-center gap-6">
+                <div className="relative">
+                    <Loader2 className="animate-spin text-primary-600" size={48} />
+                    <div className="absolute inset-0 blur-xl bg-primary-400/20 animate-pulse" />
+                </div>
+                <p className="text-slate-400 font-bold tracking-widest text-xs uppercase animate-pulse">Initializing Neural Link...</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-end">
-                <div>
-                    <h1 className="text-3xl font-display font-bold text-corporate-text">Case Explorer</h1>
-                    <p className="text-corporate-muted mt-1">Select an automated decision to review or contest.</p>
-                </div>
-                <div className="text-sm font-medium text-corporate-muted bg-white px-4 py-2 rounded-full border border-slate-200">
-                   Total: {cases.length} Recent Applications
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-12">
+            <motion.div 
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10"
+            >
                 {cases.map((item, index) => (
                     <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
+                        variants={itemVariants}
                         key={item._id}
                         onClick={() => onSelect(item._id)}
-                        className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-premium hover:border-primary-500/50 cursor-pointer transition-all group"
+                        whileHover={{ y: -8, transition: { duration: 0.2 } }}
+                        className="glass rounded-[2rem] p-8 shadow-premium hover:shadow-glow hover:border-primary-400 group cursor-pointer relative overflow-hidden transition-all border-white/40"
                     >
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-primary-50 group-hover:text-primary-500 transition-colors">
-                                {item.initial_result.decision === 'APPROVE' ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
+                        {/* Decorative Gradient Glow */}
+                        <div className="absolute -right-8 -top-8 w-24 h-24 bg-primary-600/5 blur-2xl rounded-full group-hover:bg-primary-600/10 transition-colors" />
+                        
+                        <div className="flex justify-between items-start mb-8 relative z-10">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                                item.initial_result.decision === 'APPROVE' 
+                                ? 'bg-emerald-50 text-emerald-500 shadow-emerald-100 group-hover:bg-emerald-500 group-hover:text-white' 
+                                : 'bg-rose-50 text-rose-500 shadow-rose-100 group-hover:bg-rose-500 group-hover:text-white'
+                            }`}>
+                                {item.initial_result.decision === 'APPROVE' ? <CheckCircle2 size={28} /> : <XCircle size={28} />}
                             </div>
-                            <div className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase ${
-                                item.initial_result.decision === 'APPROVE' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                            <div className={`px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase border ${
+                                item.initial_result.decision === 'APPROVE' 
+                                ? 'bg-emerald-50/50 text-emerald-600 border-emerald-100' 
+                                : 'bg-rose-50/50 text-rose-600 border-rose-100'
                             }`}>
                                 {item.initial_result.decision}
                             </div>
                         </div>
 
-                        <h3 className="font-display font-bold text-lg text-corporate-text group-hover:text-primary-600 transition-colors">{item.name}</h3>
-                        <p className="text-xs text-corporate-muted mt-1">Application ID: {item._id.slice(-8).toUpperCase()}</p>
-                        
-                        <div className="mt-6 flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] uppercase tracking-widest text-corporate-muted font-bold">Confidence</p>
-                                <p className="text-xl font-display font-bold text-corporate-text">
-                                    {(item.initial_result.probability * 100).toFixed(0)}%
-                                </p>
+                        <div className="relative z-10">
+                            <h3 className="font-display font-black text-xl text-slate-900 group-hover:text-primary-600 transition-colors tracking-tight">{item.name}</h3>
+                            <div className="flex items-center gap-2 mt-2">
+                                <Fingerprint size={12} className="text-slate-300" />
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">UID: {item._id.slice(-8)}</p>
                             </div>
-                            <div className="text-right">
-                                <p className="text-[10px] uppercase tracking-widest text-corporate-muted font-bold">Income</p>
-                                <p className="text-sm font-semibold text-corporate-text">₹{item.income.toLocaleString()}</p>
+                            
+                            <div className="mt-10 flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Confidence</p>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-3xl font-display font-black text-slate-900">
+                                            {(item.initial_result.probability * 100).toFixed(0)}
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-400">%</span>
+                                    </div>
+                                    <div className="w-20 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                        <motion.div 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${item.initial_result.probability * 100}%` }}
+                                            transition={{ delay: 0.5, duration: 1 }}
+                                            className={`h-full rounded-full ${item.initial_result.probability > 0.5 ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="text-right space-y-1">
+                                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Income</p>
+                                    <p className="text-lg font-black text-slate-900 tracking-tight">₹{item.income.toLocaleString()}</p>
+                                    <p className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg inline-block">High Tier</p>
+                                </div>
+                            </div>
+
+                            {item.initial_result.probability >= 0.55 && item.initial_result.probability <= 0.65 && (
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="mt-6 flex items-center gap-2 text-amber-600 bg-amber-50/50 backdrop-blur-sm px-4 py-3 rounded-2xl border border-amber-100 font-bold text-[11px] italic"
+                                >
+                                    <AlertCircle size={16} />
+                                    Review Recommended
+                                </motion.div>
+                            )}
+
+                            <div className="mt-8 pt-8 border-t border-slate-100/50 flex items-center justify-between text-primary-600 font-black text-xs uppercase tracking-widest">
+                                <span className="flex items-center gap-2">
+                                    Analyze Impact
+                                    <div className="w-1.5 h-1.5 bg-primary-600 rounded-full animate-pulse" />
+                                </span>
+                                <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform duration-300" />
                             </div>
                         </div>
 
-                        {item.initial_result.probability >= 0.55 && item.initial_result.probability <= 0.65 && (
-                            <div className="mt-4 flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100 italic text-xs">
-                                <AlertCircle size={14} />
-                                Human review recommended
-                            </div>
-                        )}
-
-                        <div className="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between text-primary-600 font-bold text-sm">
-                            View Analysis
-                            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </div>
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary-600 to-accent scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300" />
                     </motion.div>
                 ))}
-            </div>
+            </motion.div>
         </div>
     );
 }
