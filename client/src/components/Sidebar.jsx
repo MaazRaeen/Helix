@@ -107,12 +107,12 @@ const Sidebar = ({ currentView, onViewChange }) => {
                 <SidebarItem 
                     icon={PlusCircle} 
                     label="New Directive" 
-                    onClick={() => handlePlaceholder('Directive Creation')}
+                    to="/directives"
                 />
                 <SidebarItem 
                     icon={History} 
                     label="Decision Ledger" 
-                    onClick={() => handlePlaceholder('Ledger History')}
+                    to="/ledger"
                 />
                 
                 <div className="px-10 pt-10 pb-4">
@@ -126,7 +126,7 @@ const Sidebar = ({ currentView, onViewChange }) => {
                 <SidebarItem 
                     icon={Bell} 
                     label="Oracle Alerts" 
-                    onClick={() => handlePlaceholder('Notification Stream')}
+                    to="/alerts"
                 />
             </div>
 

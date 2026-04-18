@@ -62,13 +62,20 @@ const InnovationManifesto = () => {
                         Helix transforms static AI decisions into a transparent contestation layer. Because the innovation isn't in the data—it's in the <span className="text-slate-900 font-black">empowerment</span>.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                     <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                         <button 
                             onClick={() => navigate('/apply')}
                             className="btn-primary w-full sm:w-auto px-12 py-5 text-lg group shadow-2xl ring-offset-4 ring-offset-slate-50 ring-4 ring-primary-600/10"
                         >
                             Explore the Interface
                             <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+                        </button>
+                        <button 
+                            onClick={() => navigate('/directives')}
+                            className="btn-outline w-full sm:w-auto px-12 py-5 text-lg flex items-center justify-center gap-3 transition-all"
+                        >
+                            Executive Briefing
+                            <Cpu size={22} />
                         </button>
                     </div>
                 </motion.div>

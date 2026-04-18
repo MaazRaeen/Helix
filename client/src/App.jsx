@@ -8,6 +8,9 @@ import DecisionPage from './pages/DecisionPage';
 import ContestPage from './pages/ContestPage';
 import DeltaPage from './pages/DeltaPage';
 import InnovationManifesto from './pages/InnovationManifesto';
+import DirectivePage from './pages/DirectivePage';
+import LedgerPage from './pages/LedgerPage';
+import AlertsPage from './pages/AlertsPage';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -120,6 +123,39 @@ function App() {
                                     className="w-full"
                                 >
                                     <DeltaPage />
+                                </motion.div>
+                            } />
+
+                            <Route path="/directives" element={
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 30 }} 
+                                    animate={{ opacity: 1, y: 0 }} 
+                                    exit={{ opacity: 0, y: -30 }} 
+                                    className="w-full"
+                                >
+                                    <DirectivePage />
+                                </motion.div>
+                            } />
+
+                            <Route path="/ledger" element={
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 30 }} 
+                                    animate={{ opacity: 1, y: 0 }} 
+                                    exit={{ opacity: 0, y: -30 }} 
+                                    className="w-full"
+                                >
+                                    <LedgerPage />
+                                </motion.div>
+                            } />
+
+                            <Route path="/alerts" element={
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.95 }} 
+                                    animate={{ opacity: 1, scale: 1 }} 
+                                    exit={{ opacity: 0, scale: 1.05 }} 
+                                    className="w-full"
+                                >
+                                    <AlertsPage />
                                 </motion.div>
                             } />
                         </Routes>
