@@ -46,13 +46,15 @@ const DecisionPage = () => {
     </div>
   );
 
+  const isApproved = data?.decision?.toLowerCase().startsWith('approve');
+
   return (
     <div className="flex flex-col gap-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
         
         {/* LEFT COLUMN: Decision Status */}
         <div className="flex flex-col items-center lg:items-start gap-12 bg-white p-12 rounded-[3rem] shadow-card border border-slate-50 relative overflow-hidden">
-          <div className={`absolute top-0 left-0 w-full h-2 ${data.decision === 'Approved' ? 'bg-approved' : 'bg-rejected'}`} />
+          <div className={`absolute top-0 left-0 w-full h-2 ${isApproved ? 'bg-approved' : 'bg-rejected'}`} />
           
           <DecisionBadge 
             status={data.decision} 
@@ -66,17 +68,17 @@ const DecisionPage = () => {
             />
           </div>
 
-          <div className={`w-full ${data.decision === 'Approved' ? 'bg-approved-bg border-approved/10' : 'bg-rejected-bg border-rejected/10'} rounded-[2rem] p-8 border flex gap-5`}>
-            <div className={`${data.decision === 'Approved' ? 'text-approved' : 'text-rejected'} shrink-0`}>
+          <div className={`w-full ${isApproved ? 'bg-approved-bg border-approved/10' : 'bg-rejected-bg border-rejected/10'} rounded-[2rem] p-8 border flex gap-5`}>
+            <div className={`${isApproved ? 'text-approved' : 'text-rejected'} shrink-0`}>
               <Info size={28} strokeWidth={2.5} />
             </div>
             <div className="space-y-4">
                <div className="flex items-center gap-2">
-                 <h4 className={`text-[13px] font-black uppercase tracking-widest ${data.decision === 'Approved' ? 'text-approved' : 'text-rejected'}`}>Transparency Insight</h4>
-                 <span className={`${data.decision === 'Approved' ? 'bg-approved/10 text-approved' : 'bg-rejected/10 text-rejected'} text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}>Gemini 3 Flash</span>
+                 <h4 className={`text-[13px] font-black uppercase tracking-widest ${isApproved ? 'text-approved' : 'text-rejected'}`}>Transparency Insight</h4>
+                 <span className={`${isApproved ? 'bg-approved/10 text-approved' : 'bg-rejected/10 text-rejected'} text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}>Gemini 3 Flash</span>
                </div>
                <p className="text-[15px] leading-relaxed text-slate-700 font-medium whitespace-pre-line">
-                 {data.transparency_report || `Decision based on core financial metrics including credit integrity and debt-to-income ratio.`}
+                 {data.explanation || `Decision based on core financial metrics including credit integrity and debt-to-income ratio.`}
               </p>
             </div>
           </div>
@@ -104,16 +106,16 @@ const DecisionPage = () => {
                 >
                   <div className="px-8 pb-8 flex flex-col gap-4">
                     <p className="text-[14px] text-slate-500 leading-relaxed font-medium pb-6 border-b border-slate-50">
-                      Outcome determined via automated compliance checks. The model utilized Gradient Boosting with SHAP value calculation to identify key decision drivers.
+                      Outcome determined via automated compliance checks. The model utilized Logistic Regression with weight-based contribution mapping to identify key decision drivers.
                     </p>
                     <div className="grid grid-cols-2 gap-4">
                        <div className="p-4 bg-slate-50 rounded-2xl">
                           <span className="label">Algorithm</span>
-                          <p className="text-xs font-black text-slate-900">XGBoost v1.7.5</p>
+                          <p className="text-xs font-black text-slate-900">Logistic Regression v1.0</p>
                        </div>
                        <div className="p-4 bg-slate-50 rounded-2xl">
                           <span className="label">Verification</span>
-                          <p className="text-xs font-black text-slate-900">Level 3 Audit</p>
+                          <p className="text-xs font-black text-slate-900">Neural Audit Active</p>
                        </div>
                     </div>
                   </div>
@@ -123,7 +125,7 @@ const DecisionPage = () => {
           </div>
 
           {/* Advisor Engine - Only for Rejected cases */}
-          {data.decision === 'Rejected' && (
+          {!isApproved && (
             <div className="w-full bg-slate-900 text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
                <div className="absolute top-0 right-0 p-6 text-white/10 group-hover:text-primary-accent/20 transition-colors">
                   <Lightbulb size={80} />
@@ -144,10 +146,10 @@ const DecisionPage = () => {
                  </p>
                  
                  <ul className="space-y-3">
-                   {data.counterfactuals?.map((cf, idx) => (
+                   {data.counterfactuals?.suggestions?.map((cf, idx) => (
                       <li key={idx} className="flex items-center gap-3 text-xs font-bold">
                         <div className="w-1.5 h-1.5 rounded-full bg-primary-accent" />
-                        {cf}
+                        {cf.description}
                       </li>
                    )) || (
                      <li className="flex items-center gap-3 text-xs font-bold italic text-slate-500">
@@ -155,6 +157,11 @@ const DecisionPage = () => {
                      </li>
                    )}
                  </ul>
+                 {data.counterfactuals?.ai_advice && (
+                   <p className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10 text-[10px] leading-relaxed text-slate-300 italic">
+                      {data.counterfactuals.ai_advice}
+                   </p>
+                 )}
                </div>
             </div>
           )}
@@ -169,14 +176,14 @@ const DecisionPage = () => {
             <h2 className="text-4xl font-display font-black text-slate-900 mb-2 tracking-tight">Why Was This Decision Made?</h2>
             <p className="text-slate-400 font-bold uppercase tracking-widest text-[11px] mb-12">Global Feature Importance Mapping (SHAP values)</p>
             
-            {data.contributions && data.contributions.length > 0 ? (
+            {data.topFactors && data.topFactors.length > 0 ? (
               <>
-                <SHAPChart data={data.contributions} />
-                <FeatureImpactTable data={data.contributions} />
+                <SHAPChart data={data.topFactors} />
+                <FeatureImpactTable data={data.topFactors} />
               </>
             ) : (
-              <div className="py-20 text-center">
-                <p className="text-slate-400 italic">Contribution data not available for this record.</p>
+              <div className="py-20 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-100">
+                <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Neural contribution mapping not available for this record type.</p>
               </div>
             )}
           </div>
@@ -195,7 +202,7 @@ const DecisionPage = () => {
         
         <div className="flex flex-col items-center sm:items-end gap-3">
           <button 
-            disabled={data.decision === 'Approved'}
+            disabled={isApproved}
             onClick={() => navigate(`/contest/${id}`)}
             className="btn-primary flex items-center gap-3 px-12 text-sm group disabled:opacity-50 disabled:cursor-not-allowed"
           >

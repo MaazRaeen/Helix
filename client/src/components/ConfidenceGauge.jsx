@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const ConfidenceGauge = ({ confidence = 0, status = '' }) => {
-  const isApproved = status?.toLowerCase() === 'approved';
+  const isApproved = status?.toLowerCase().startsWith('approve');
   const radius = 80;
   const circumference = Math.PI * radius;
   const safeConfidence = Math.max(0, Math.min(100, confidence));
