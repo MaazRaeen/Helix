@@ -1,3 +1,4 @@
+console.log('[DEBUG] Initializing Helix API Router...');
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
@@ -9,6 +10,8 @@ const {
     generateCounterfactualSuggestions,
     handleOracleChat
 } = require('../utils/geminiService');
+
+router.get('/ping', (req, res) => res.json({ status: 'online', context: 'Helix API RESTORED', timestamp: new Date() }));
 
 /**
  * GET /api/cases - Fetch demo cases
@@ -29,16 +32,37 @@ router.get('/cases', async (req, res) => {
  * GET /api/case/:id - Singular alias for frontend compatibility
  */
 router.get('/case/:id', async (req, res) => {
+    console.log(`[GET] Fetching case detail: ${req.params.id}`);
+    
+    let item;
     if (!mongoose.connection.readyState || mongoose.connection.readyState !== 1) {
-        const item = (global.mockCases || []).find(c => c._id === req.params.id);
-        return item ? res.json(item) : res.status(404).json({ error: 'Case not found' });
+        item = (global.mockCases || []).find(c => c._id === req.params.id);
+    } else {
+        try {
+            item = await Case.findById(req.params.id);
+        } catch (error) {
+            console.error(`[ERROR] Failed to fetch case ${req.params.id}:`, error.message);
+            return res.status(404).json({ error: 'Format error or Case missing' });
+        }
     }
-    try {
-        const item = await Case.findById(req.params.id);
-        res.json(item);
-    } catch (error) {
-        res.status(404).json({ error: 'Case not found' });
+
+    if (!item) {
+        console.warn(`[WARN] Case detail not found: ${req.params.id}`);
+        return res.status(404).json({ error: 'Case not found' });
     }
+
+    // Flatten for UI compatibility
+    const currentView = item.updated_state || {};
+    const responseData = {
+        ...item.toObject ? item.toObject() : item,
+        decision: currentView.decision || 'PENDING',
+        probability: currentView.probability || 0,
+        confidence: Math.round((currentView.probability || 0) * 100),
+        explanation: currentView.explanation || "No explanation available.",
+        topFactors: item.initial_result?.topFactors || []
+    };
+
+    res.json(responseData);
 });
 
 /**
@@ -185,12 +209,16 @@ router.post('/re-evaluate/:id', async (req, res) => {
  * POST /api/chat - General Oracle Chat
  */
 router.post('/chat', async (req, res) => {
+    console.log(`[POST] Oracle Chat Request: ${req.body.message?.substring(0, 50)}...`);
     try {
         const { message, history } = req.body;
+        if (!message) return res.status(400).json({ error: 'Empty message' });
+        
         const response = await handleOracleChat(message, history || []);
         res.json({ response });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('[ERROR] Oracle Chat Failure:', error.message);
+        res.status(500).json({ error: 'Neural link degraded' });
     }
 });
 

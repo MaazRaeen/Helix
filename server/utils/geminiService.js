@@ -141,7 +141,8 @@ async function handleOracleChat(userMessage, history = []) {
         
         return genResult.response.text().trim();
     } catch (error) {
-        console.error("Chat Error:", error);
+        console.error("Chat Error (Helix Oracle):", error.message);
+        if (error.response) console.error("Gemini Details:", error.response);
         return "The Helix Oracle is currently recalibrating its neural mesh. Please try again in a few moments.";
     }
 }

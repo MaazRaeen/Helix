@@ -1,11 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const ConfidenceGauge = ({ confidence, status }) => {
-  const isApproved = status.toLowerCase() === 'approved';
+const ConfidenceGauge = ({ confidence = 0, status = '' }) => {
+  const isApproved = status?.toLowerCase() === 'approved';
   const radius = 80;
   const circumference = Math.PI * radius;
-  const offset = circumference - (confidence / 100) * circumference;
+  const safeConfidence = Math.max(0, Math.min(100, confidence));
+  const offset = circumference - (safeConfidence / 100) * circumference;
   
   return (
     <div className="relative flex flex-col items-center">

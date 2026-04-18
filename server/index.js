@@ -10,6 +10,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Health Check
+app.get('/api-health', (req, res) => res.json({ status: 'active', timestamp: new Date() }));
+
 // Routes
 app.use('/api', apiRoutes);
 
@@ -40,7 +43,7 @@ async function seedMockData() {
             _id: "650000000000000000000001",
             name: "Rahul Sharma (Rejected -> Approved)",
             income: 45000,
-            coapplicant_income: 1508,
+            coapplicant_income: 1500,
             credit_score: 620,
             loan_amount: 128000,
             loan_term: 360,
@@ -109,42 +112,62 @@ async function seedDemoData() {
         {
             name: "Rahul Sharma (Rejected -> Approved)",
             income: 45000,
+            coapplicant_income: 1500,
             credit_score: 620,
-            employment_length: 12,
-            existing_debt: 20000,
-            bank_balance: 5000,
+            loan_amount: 128000,
+            loan_term: 360,
+            gender: 'Male',
+            married: 'Yes',
+            dependents: '1',
+            education: 'Graduate',
+            self_employed: 'No',
+            property_area: 'Rural',
+            existing_debt: 20000
         },
         {
             name: "Priya Patel (Rejected -> Remains Rejected)",
             income: 30000,
+            coapplicant_income: 0,
             credit_score: 550,
-            employment_length: 6,
-            existing_debt: 40000,
-            bank_balance: 2000,
+            loan_amount: 66000,
+            loan_term: 360,
+            gender: 'Female',
+            married: 'No',
+            dependents: '0',
+            education: 'Not Graduate',
+            self_employed: 'No',
+            property_area: 'Urban',
+            existing_debt: 40000
         },
         {
             name: "Amit Das (Borderline Case)",
             income: 55000,
+            coapplicant_income: 2358,
             credit_score: 640,
-            employment_length: 24,
-            existing_debt: 15000,
-            bank_balance: 8000,
+            loan_amount: 120000,
+            loan_term: 360,
+            gender: 'Male',
+            married: 'Yes',
+            dependents: '2',
+            education: 'Graduate',
+            self_employed: 'No',
+            property_area: 'Semiurban',
+            existing_debt: 15000
         }
     ];
 
     for (const data of demoCases) {
         const result = calculateResult(data);
-        // Minimal seed for demo (AI explanations will be generated on first re-evaluation or could be hardcoded)
         const newCase = new Case({
             ...data,
             initial_result: {
                 ...result,
-                explanation: "Initial automated assessment based on credit and debt profile."
+                explanation: "Initial automated assessment based on real-time neural weight analysis."
             },
             updated_state: {
                 ...data,
                 ...result,
-                explanation: "Initial state.",
+                explanation: "Initial state repository entry.",
                 isContested: false
             }
         });

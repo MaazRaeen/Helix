@@ -2,7 +2,7 @@ import React from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
 const DecisionBadge = ({ status, applicationNumber }) => {
-  const isApproved = status.toLowerCase() === 'approved';
+  const isApproved = status?.toLowerCase() === 'approved';
   
   return (
     <div className="flex flex-col items-center gap-2">
