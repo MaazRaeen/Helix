@@ -1,0 +1,132 @@
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const apiRoutes = require('./routes/api');
+const Case = require('./models/Application');
+const { calculateResult } = require('./utils/decisionEngine');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/api', apiRoutes);
+
+// Database Connection & Seeding
+const PORT = process.env.PORT || 5000;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+let isUsingMock = false;
+
+mongoose.connect(MONGODB_URI)
+    .then(async () => {
+        console.log('Connected to MongoDB');
+        await seedDemoData();
+        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    })
+    .catch(err => {
+        console.error('MongoDB connection error, falling back to Mock DB:', err.message);
+        isUsingMock = true;
+        // In-memory mock storage
+        global.mockCases = [];
+        seedMockData();
+        app.listen(PORT, () => console.log(`Server running with MOCK DB on port ${PORT}`));
+    });
+
+async function seedMockData() {
+    const demoData = [
+        {
+            _id: "650000000000000000000001",
+            name: "Rahul Sharma (Rejected -> Approved)",
+            income: 45000,
+            credit_score: 620,
+            employment_length: 12,
+            existing_debt: 20000,
+            bank_balance: 5000,
+            createdAt: new Date()
+        },
+        {
+            _id: "650000000000000000000002",
+            name: "Priya Patel (Rejected -> Remains Rejected)",
+            income: 30000,
+            credit_score: 550,
+            employment_length: 6,
+            existing_debt: 40000,
+            bank_balance: 2000,
+            createdAt: new Date()
+        },
+        {
+            _id: "650000000000000000000003",
+            name: "Amit Das (Borderline Case)",
+            income: 55000,
+            credit_score: 640,
+            employment_length: 24,
+            existing_debt: 15000,
+            bank_balance: 8000,
+            createdAt: new Date()
+        }
+    ];
+    
+    global.mockCases = demoData.map(d => {
+        const result = calculateResult(d);
+        return {
+            ...d,
+            initial_result: { ...result, explanation: "Automated assessment." },
+            updated_state: { ...d, ...result, isContested: false }
+        };
+    });
+}
+
+async function seedDemoData() {
+    const existing = await Case.countDocuments();
+    if (existing > 0) return;
+
+    console.log('Seeding demo data...');
+    
+    const demoCases = [
+        {
+            name: "Rahul Sharma (Rejected -> Approved)",
+            income: 45000,
+            credit_score: 620,
+            employment_length: 12,
+            existing_debt: 20000,
+            bank_balance: 5000,
+        },
+        {
+            name: "Priya Patel (Rejected -> Remains Rejected)",
+            income: 30000,
+            credit_score: 550,
+            employment_length: 6,
+            existing_debt: 40000,
+            bank_balance: 2000,
+        },
+        {
+            name: "Amit Das (Borderline Case)",
+            income: 55000,
+            credit_score: 640,
+            employment_length: 24,
+            existing_debt: 15000,
+            bank_balance: 8000,
+        }
+    ];
+
+    for (const data of demoCases) {
+        const result = calculateResult(data);
+        // Minimal seed for demo (AI explanations will be generated on first re-evaluation or could be hardcoded)
+        const newCase = new Case({
+            ...data,
+            initial_result: {
+                ...result,
+                explanation: "Initial automated assessment based on credit and debt profile."
+            },
+            updated_state: {
+                ...data,
+                ...result,
+                explanation: "Initial state.",
+                isContested: false
+            }
+        });
+        await newCase.save();
+    }
+}
