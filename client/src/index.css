@@ -5,18 +5,19 @@
 @tailwind utilities;
 
 :root {
-  --primary: #4f46e5;
-  --primary-glow: rgba(79, 70, 229, 0.4);
-  --accent: #8b5cf6;
-  --bg-mesh: #f8fafc;
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  --primary: #4338ca; /* Darker, more saturated indigo */
+  --primary-glow: rgba(67, 56, 202, 0.5);
+  --accent: #7c3aed; /* Deeper violet */
+  --bg-mesh: #f1f5f9; /* Slightly darker background for better card contrast */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.4);
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-weight: 500; /* Increased base weight from 400 to 500 */
 }
 
 body {
@@ -24,7 +25,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg-mesh);
-  color: #1e293b;
+  color: #0f172a; /* Darker text */
   overflow-x: hidden;
 }
 

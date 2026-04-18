@@ -126,34 +126,34 @@ function CaseList({ onSelect }) {
                         </div>
 
                         <div className="relative z-10">
-                            <h3 className="font-display font-black text-xl text-slate-900 group-hover:text-primary-600 transition-colors tracking-tight">{item.name}</h3>
+                            <h3 className="font-display font-black text-2xl text-slate-900 group-hover:text-primary-700 transition-colors tracking-tighter leading-tight">{item.name}</h3>
                             <div className="flex items-center gap-2 mt-2">
-                                <Fingerprint size={12} className="text-slate-300" />
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">UID: {item._id.slice(-8)}</p>
+                                <Fingerprint size={14} className="text-primary-400 stroke-[2.5]" />
+                                <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Case ID: {item._id.slice(-8).toUpperCase()}</p>
                             </div>
                             
                             <div className="mt-10 flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Confidence</p>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-3xl font-display font-black text-slate-900">
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-black">AI Confidence</p>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className="text-4xl font-display font-black text-slate-900 tracking-tighter">
                                             {(item.initial_result.probability * 100).toFixed(0)}
                                         </span>
-                                        <span className="text-xs font-bold text-slate-400">%</span>
+                                        <span className="text-sm font-black text-slate-400">%</span>
                                     </div>
-                                    <div className="w-20 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                                    <div className="w-24 h-2 bg-slate-200 rounded-full mt-2 overflow-hidden shadow-inner">
                                         <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${item.initial_result.probability * 100}%` }}
-                                            transition={{ delay: 0.5, duration: 1 }}
-                                            className={`h-full rounded-full ${item.initial_result.probability > 0.5 ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                                            transition={{ delay: 0.5, duration: 1.2, ease: "easeOut" }}
+                                            className={`h-full rounded-full ${item.initial_result.probability > 0.5 ? 'bg-emerald-500' : 'bg-rose-500'} shadow-[0_0_8px_rgba(0,0,0,0.1)]`}
                                         />
                                     </div>
                                 </div>
                                 <div className="text-right space-y-1">
-                                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Income</p>
-                                    <p className="text-lg font-black text-slate-900 tracking-tight">₹{item.income.toLocaleString()}</p>
-                                    <p className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg inline-block">High Tier</p>
+                                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-black">Valuation</p>
+                                    <p className="text-xl font-black text-slate-900 tracking-tighter">₹{item.income.toLocaleString()}</p>
+                                    <p className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg inline-block border border-emerald-100 shadow-sm">Premium Account</p>
                                 </div>
                             </div>
 

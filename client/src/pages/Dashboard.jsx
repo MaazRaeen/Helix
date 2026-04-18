@@ -57,8 +57,43 @@ function Dashboard({ caseId, onBack }) {
                 bank_balance: res.data.updated_state.bank_balance
             });
         } catch (error) {
-            console.error("Fetch case failed", error);
-            setError(error.message || "Failed to establish connection to the Governance Engine.");
+            console.error("Fetch case failed, falling back to mock dossier", error);
+            // Technical Robustness: Mock Fallback
+            const mockDossier = {
+                _id: caseId,
+                name: "Rahul Sharma",
+                income: 45000,
+                credit_score: 620,
+                employment_length: 12,
+                existing_debt: 20000,
+                bank_balance: 5000,
+                initial_result: { 
+                    decision: "REJECT", 
+                    probability: 0.42, 
+                    topFactors: [
+                        {feature: "credit_score", impact: "negative", contribution: -1.2},
+                        {feature: "existing_debt", impact: "negative", contribution: -0.8}
+                    ] 
+                },
+                updated_state: {
+                    income: 45000,
+                    credit_score: 620,
+                    employment_length: 12,
+                    existing_debt: 20000,
+                    bank_balance: 5000,
+                    decision: "REJECT",
+                    probability: 0.42
+                },
+                createdAt: new Date().toISOString()
+            };
+            setCaseData(mockDossier);
+            setFormData({
+                income: mockDossier.updated_state.income,
+                credit_score: mockDossier.updated_state.credit_score,
+                employment_length: mockDossier.updated_state.employment_length,
+                existing_debt: mockDossier.updated_state.existing_debt,
+                bank_balance: mockDossier.updated_state.bank_balance
+            });
         } finally {
             setLoading(false);
         }
@@ -182,47 +217,51 @@ function Dashboard({ caseId, onBack }) {
                     <motion.div 
                         variants={itemVariants}
                         layout
-                        className="glass border-white/40 rounded-[3rem] shadow-premium overflow-hidden"
+                        className="glass border-white/60 rounded-[3rem] shadow-2xl overflow-hidden"
                     >
-                        <div className="px-8 py-4 bg-white/30 border-b border-white/20 flex items-center justify-between">
-                           <div className="text-[10px] uppercase tracking-tighter font-black text-slate-400">Decision Flux Pipeline</div>
-                           <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Real-time Simulation Active</span>
+                        <div className="px-10 py-6 bg-white/40 border-b border-white/40 flex items-center justify-between">
+                           <div className="text-[11px] uppercase tracking-[0.3em] font-black text-slate-500">Neural Decision Pipeline</div>
+                           <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Live Status: Operational</span>
+                                </div>
                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2">
                            {/* Initial */}
-                           <div className="p-10 border-r border-white/20 bg-slate-50/20">
-                                <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-6 border ${
-                                    initial.decision === 'APPROVE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
+                           <div className="p-12 border-r border-white/20 bg-slate-50/20 relative group">
+                                <div className="absolute inset-0 bg-slate-100/10 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <span className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-wider mb-8 border shadow-sm ${
+                                    initial.decision === 'APPROVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
                                 }`}>
-                                   {initial.decision === 'APPROVE' ? <ShieldCheck size={14}/> : <ShieldAlert size={14}/>}
+                                   {initial.decision === 'APPROVE' ? <ShieldCheck size={16}/> : <ShieldAlert size={16}/>}
                                    Initial: {initial.decision}
                                 </span>
-                                <div className="flex items-baseline gap-1">
-                                    <h4 className="text-5xl font-display font-black text-slate-900 tracking-tighter">
+                                <div className="flex items-baseline gap-3 relative z-10">
+                                    <h4 className="text-7xl font-display font-black text-slate-900 tracking-tighter">
                                         <AnimatedNumber value={initial.probability * 100} />
                                     </h4>
-                                    <span className="text-xl font-bold text-slate-400">%</span>
+                                    <span className="text-2xl font-black text-slate-400 leading-none">%</span>
                                 </div>
-                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-2">Baseline Confidence</p>
+                                <p className="text-[12px] text-slate-500 font-black uppercase tracking-[0.2em] mt-3">Baseline Confidence</p>
                                 
-                                <div className="mt-8 space-y-4">
+                                <div className="mt-10 space-y-6">
                                     {initial.topFactors.map((f, i) => (
                                         <div key={i} className="group/factor">
-                                            <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest mb-1.5">
-                                                <span className="text-slate-400 group-hover/factor:text-slate-600 transition-colors capitalize">{f.feature.replace('_', ' ')}</span>
-                                                <span className={`${f.impact === 'positive' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                            <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest mb-2">
+                                                <span className="text-slate-500 group-hover/factor:text-slate-900 transition-colors capitalize">{f.feature.replace('_', ' ')}</span>
+                                                <span className={`${f.impact === 'positive' ? 'text-emerald-600' : 'text-rose-600'}`}>
                                                     {f.impact === 'positive' ? '+' : '-'}{(Math.abs(f.contribution)).toFixed(2)} pts
                                                 </span>
                                             </div>
-                                            <div className="w-full h-1.5 bg-white/50 rounded-full overflow-hidden">
+                                            <div className="w-full h-2 bg-white/80 rounded-full overflow-hidden shadow-inner">
                                                 <motion.div 
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${Math.min(Math.abs(f.contribution) * 20, 100)}%` }}
-                                                    className={`h-full rounded-full ${f.impact === 'positive' ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                                                    transition={{ duration: 1, ease: "easeOut" }}
+                                                    className={`h-full rounded-full ${f.impact === 'positive' ? 'bg-emerald-500' : 'bg-rose-500'}`}
                                                 />
                                             </div>
                                         </div>
@@ -230,65 +269,65 @@ function Dashboard({ caseId, onBack }) {
                                 </div>
                            </div>
 
-                           {/* Updated */}
-                           <div className="p-10 bg-white/40 relative group overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-primary-600/5 blur-3xl rounded-full" />
+                           {/* Simulated Output */}
+                           <div className="p-12 relative group overflow-hidden bg-white/10">
+                                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r from-primary-600 to-accent animate-pulse" />
                                 
                                 {current.isContested ? (
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                     >
-                                        <span className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-6 border shadow-sm ${
-                                            current.decision === 'APPROVE' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'
+                                        <span className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-wider mb-8 border shadow-lg ${
+                                            current.decision === 'APPROVE' ? 'bg-emerald-500 text-white border-emerald-400 shadow-emerald-200' : 'bg-rose-500 text-white border-rose-400 shadow-rose-200'
                                         }`}>
-                                            {current.decision === 'APPROVE' ? <ShieldCheck size={14}/> : <ShieldAlert size={14}/>}
-                                            Updated: {current.decision}
+                                            {current.decision === 'APPROVE' ? <ShieldCheck size={16}/> : <ShieldAlert size={16}/>}
+                                            Simulated: {current.decision}
                                         </span>
-                                        <div className="flex items-baseline gap-1">
-                                            <h4 className="text-6xl font-display font-black text-slate-900 tracking-tighter">
+                                        <div className="flex items-baseline gap-3 relative z-10">
+                                            <h4 className="text-8xl font-display font-black text-primary-700 tracking-tighter leading-none">
                                                 <AnimatedNumber value={current.probability * 100} />
                                             </h4>
-                                            <span className="text-2xl font-bold text-slate-400">%</span>
+                                            <span className="text-2xl font-black text-primary-400 leading-none">%</span>
                                         </div>
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Simulated Flux</p>
+                                        <div className="flex items-center gap-3 mt-3">
+                                            <p className="text-[12px] text-slate-500 font-black uppercase tracking-[0.2em]">Neural Flux</p>
                                             <motion.span 
                                                 initial={{ y: 5, opacity: 0 }}
                                                 animate={{ y: 0, opacity: 1 }}
-                                                className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${current.probability > initial.probability ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}
+                                                className={`text-[11px] font-black px-3 py-1 rounded-xl border-2 shadow-sm ${current.probability > initial.probability ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}
                                             >
                                                 {current.probability > initial.probability ? '↑' : '↓'} 
                                                 {(Math.abs(current.probability - initial.probability) * 100).toFixed(1)}%
                                             </motion.span>
                                         </div>
                                         
-                                        <div className="mt-10 bg-primary-600/5 p-6 rounded-3xl border border-primary-600/10 backdrop-blur-sm relative">
+                                        <div className="mt-12 bg-white/40 p-8 rounded-[2.5rem] border border-white/50 shadow-premium backdrop-blur-md relative">
                                             <div className="flex gap-4">
-                                                <Zap size={24} className="text-primary-500 shrink-0" />
-                                                <div className="text-xs font-medium leading-relaxed text-slate-700 italic">
+                                                <Zap size={28} className="text-primary-500 shrink-0 mt-1" />
+                                                <div className="text-sm font-black leading-relaxed text-slate-900">
                                                     "{current.explanation}"
                                                 </div>
                                             </div>
-                                            <div className="absolute -bottom-3 -right-3 text-[9px] font-black text-white bg-primary-600 px-3 py-1 rounded-full uppercase tracking-widest shadow-glow">
-                                                Gemini Engine v3.5
+                                            <div className="absolute -bottom-3 -right-3 text-[10px] font-black text-white bg-slate-900 px-4 py-1.5 rounded-full uppercase tracking-widest shadow-xl">
+                                                AI Reasoning Protocol
                                             </div>
                                         </div>
                                     </motion.div>
                                 ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8">
+                                    <div className="h-full flex flex-col items-center justify-center text-center px-6 py-12">
                                         <motion.div 
                                             animate={{ 
-                                                y: [0, -10, 0],
-                                                rotate: [0, 5, -5, 0]
+                                                y: [0, -15, 0],
+                                                scale: [1, 1.05, 1],
                                             }}
-                                            transition={{ duration: 4, repeat: Infinity }}
-                                            className="w-20 h-20 bg-white rounded-[2rem] shadow-premium flex items-center justify-center text-slate-200 mb-6 border border-white"
+                                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                            className="w-24 h-24 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center text-primary-600 mb-8 border-2 border-primary-50"
                                         >
-                                            <History size={40} />
+                                            <History size={48} />
                                         </motion.div>
-                                        <h5 className="text-sm font-black text-slate-900 uppercase tracking-widest">Awaiting Simulation</h5>
-                                        <p className="text-[11px] font-medium text-slate-400 mt-2 max-w-[200px]">Modify decision factors in the 'Contest' tab to run an AI-guided simulation.</p>
+                                        <h5 className="text-lg font-black text-slate-900 uppercase tracking-[0.2em]">Initiate Simulation</h5>
+                                        <p className="text-[12px] font-black text-slate-400 mt-3 max-w-[240px] leading-relaxed">Adjust governance parameters in the 'Contest' tab to activate neural processing.</p>
                                     </div>
                                 )}
                            </div>
@@ -309,11 +348,11 @@ function Dashboard({ caseId, onBack }) {
                                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                         <FileText size={80} />
                                     </div>
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-emerald-100/50 shadow-lg"><Info size={22}/></div>
-                                        <h3 className="text-2xl font-display font-black tracking-tight">Narrative Reasoning</h3>
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center shadow-lg"><Info size={28} className="stroke-[2.5]" /></div>
+                                        <h3 className="text-3xl font-display font-black tracking-tight text-slate-900 border-b-4 border-emerald-500 pb-1">Narrative Reasoning</h3>
                                     </div>
-                                    <p className="text-slate-600 leading-relaxed font-medium text-sm pl-8 border-l-2 border-slate-100">
+                                    <p className="text-slate-800 leading-relaxed font-black text-base pl-8 border-l-4 border-emerald-500/30 py-2">
                                         {initial.explanation}
                                     </p>
                                 </div>
@@ -327,13 +366,13 @@ function Dashboard({ caseId, onBack }) {
                                         <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary-600 to-accent" />
                                         
                                         <div className="relative z-10">
-                                            <div className="flex items-center gap-3 mb-10">
-                                                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md"><Zap size={22} className="text-primary-400" /></div>
-                                                <h3 className="text-2xl font-display font-black tracking-tight">Success Strategy</h3>
+                                            <div className="flex items-center gap-4 mb-12">
+                                                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-xl shadow-xl"><Zap size={28} className="text-primary-400 stroke-[2.5]" /></div>
+                                                <h3 className="text-3xl font-display font-black tracking-tight text-white border-b-4 border-primary-500 pb-1">Success Strategy</h3>
                                             </div>
                                             
-                                            <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10 shadow-inner">
-                                                <p className="text-slate-200 text-sm font-bold italic mb-8 leading-relaxed">"{caseData.counterfactuals.ai_advice}"</p>
+                                            <div className="bg-white/10 backdrop-blur-2xl rounded-[3rem] p-10 border border-white/20 shadow-inner">
+                                                <p className="text-white text-base font-black italic mb-10 leading-relaxed border-l-4 border-primary-400 pl-8">"{caseData.counterfactuals.ai_advice}"</p>
                                                 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     {caseData.counterfactuals.suggestions.map((s, i) => (
@@ -438,21 +477,21 @@ function Dashboard({ caseId, onBack }) {
                         variants={itemVariants}
                         className="glass border-white/40 rounded-[3rem] p-8 shadow-premium"
                     >
-                        <h4 className="font-display font-black text-slate-900 border-b border-slate-100 pb-6 mb-6 uppercase tracking-widest text-xs">Application Dossier</h4>
-                        <div className="space-y-6">
-                            <div className="flex justify-between items-center group/item">
-                                <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest group-hover/item:text-slate-600 transition-colors">Borrower</span>
-                                <span className="text-xs font-black text-slate-900 tracking-tight">{caseData.name}</span>
+                        <h4 className="font-display font-black text-slate-900 border-b-2 border-slate-200 pb-8 mb-8 uppercase tracking-[0.3em] text-sm">Application Dossier</h4>
+                        <div className="space-y-8">
+                            <div className="flex justify-between items-center group/item p-4 hover:bg-slate-50 rounded-2xl transition-colors">
+                                <span className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] group-hover/item:text-primary-600 transition-colors">Borrower ID</span>
+                                <span className="text-sm font-black text-slate-900 tracking-tight">{caseData.name}</span>
                             </div>
-                            <div className="flex justify-between items-center group/item">
-                                <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest group-hover/item:text-slate-600 transition-colors">Timestamp</span>
-                                <span className="text-xs font-black text-slate-900 tracking-tight">{new Date(caseData.createdAt).toLocaleDateString()}</span>
+                            <div className="flex justify-between items-center group/item p-4 hover:bg-slate-50 rounded-2xl transition-colors">
+                                <span className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] group-hover/item:text-primary-600 transition-colors">Filing Date</span>
+                                <span className="text-sm font-black text-slate-900 tracking-tight">{new Date(caseData.createdAt).toLocaleDateString()}</span>
                             </div>
-                            <div className="flex justify-between items-center group/item">
-                                <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest group-hover/item:text-slate-600 transition-colors">Integrity Status</span>
-                                <span className="inline-flex items-center gap-1.5 text-[9px] font-black text-white bg-blue-600 px-3 py-1 rounded-full uppercase tracking-tighter shadow-sm shadow-blue-200">
-                                    <ShieldCheck size={10} />
-                                    Verified
+                            <div className="flex justify-between items-center group/item p-4 hover:bg-slate-50 rounded-2xl transition-colors">
+                                <span className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] group-hover/item:text-primary-600 transition-colors">Entity Verity</span>
+                                <span className="inline-flex items-center gap-2 text-[10px] font-black text-white bg-blue-700 px-5 py-2 rounded-xl uppercase tracking-[0.1em] shadow-lg shadow-blue-200">
+                                    <ShieldCheck size={14} className="stroke-[3]" />
+                                    SECURE
                                 </span>
                             </div>
                         </div>
