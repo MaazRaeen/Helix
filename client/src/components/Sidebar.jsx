@@ -75,12 +75,13 @@ const Sidebar = ({ currentView, onViewChange }) => {
                 />
                 
                 <div className="px-10 pt-10 pb-4">
-                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Compliance</p>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">Applicant Experience</p>
                 </div>
                 <SidebarItem 
                     icon={Shield} 
-                    label="Integrity Audit" 
-                    onClick={() => handlePlaceholder('Audit Protocol')}
+                    label="Loan Application" 
+                    active={currentView === 'applicant-flow'} 
+                    onClick={() => onViewChange('applicant-flow')} 
                 />
                 <SidebarItem 
                     icon={Bell} 

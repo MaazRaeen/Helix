@@ -3,15 +3,35 @@ import api from './utils/api';
 import Dashboard from './pages/Dashboard';
 import CaseList from './pages/CaseList';
 import Sidebar from './components/Sidebar';
+import ApplicationPage from './pages/ApplicationPage';
+import DecisionPage from './pages/DecisionPage';
+import ContestPage from './pages/ContestPage';
+import DeltaPage from './pages/DeltaPage';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
-    const [view, setView] = useState('list'); // 'list' or 'dashboard'
+    const [view, setView] = useState('list'); // 'list', 'dashboard', or 'applicant-flow'
     const [selectedCaseId, setSelectedCaseId] = useState(null);
+    const [applicantStage, setApplicantStage] = useState('application'); // 'application', 'decision', 'contest', 'delta'
 
     const handleSelectCase = (id) => {
         setSelectedCaseId(id);
         setView('dashboard');
+    };
+
+    const renderApplicantFlow = () => {
+        switch (applicantStage) {
+            case 'application':
+                return <ApplicationPage onComplete={() => setApplicantStage('decision')} />;
+            case 'decision':
+                return <DecisionPage onContest={() => setApplicantStage('contest')} onNew={() => setApplicantStage('application')} />;
+            case 'contest':
+                return <ContestPage onBack={() => setApplicantStage('decision')} onComplete={() => setApplicantStage('delta')} />;
+            case 'delta':
+                return <DeltaPage onNew={() => setApplicantStage('application')} />;
+            default:
+                return <ApplicationPage onComplete={() => setApplicantStage('decision')} />;
+        }
     };
 
     return (
@@ -50,7 +70,7 @@ function App() {
                                 </div>
                                 <CaseList onSelect={handleSelectCase} />
                             </motion.div>
-                        ) : (
+                        ) : view === 'dashboard' ? (
                             <motion.div
                                 key="dashboard"
                                 initial={{ opacity: 0, x: 20 }}
@@ -63,6 +83,17 @@ function App() {
                                     caseId={selectedCaseId} 
                                     onBack={() => setView('list')} 
                                 />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="applicant-flow"
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -30 }}
+                                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                                className="w-full"
+                            >
+                                {renderApplicantFlow()}
                             </motion.div>
                         )}
                     </AnimatePresence>
