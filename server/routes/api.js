@@ -221,5 +221,25 @@ router.post('/chat', async (req, res) => {
         res.status(500).json({ error: 'Neural link degraded' });
     }
 });
+/**
+ * DELETE /api/cases/:id - Delete a case
+ */
+router.delete('/cases/:id', async (req, res) => {
+    console.log(`[DELETE] Removing case: ${req.params.id}`);
+    if (!mongoose.connection.readyState || mongoose.connection.readyState !== 1) {
+        const idx = (global.mockCases || []).findIndex(c => c._id === req.params.id);
+        if (idx === -1) return res.status(404).json({ error: 'Case not found' });
+        global.mockCases.splice(idx, 1);
+        return res.json({ success: true, message: 'Case removed from Mock DB' });
+    }
+    try {
+        const result = await Case.findByIdAndDelete(req.params.id);
+        if (!result) return res.status(404).json({ error: 'Case not found' });
+        res.json({ success: true, message: 'Case permanently removed' });
+    } catch (error) {
+        console.error(`[ERROR] Delete failed for ${req.params.id}:`, error.message);
+        res.status(500).json({ error: 'Delete operation failed' });
+    }
+});
 
 module.exports = router;

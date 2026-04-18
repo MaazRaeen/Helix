@@ -24,7 +24,8 @@ const LedgerPage = () => {
     }, []);
 
     const getStatusColor = (decision) => {
-        return decision === 'Approved' ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50';
+        const isApproved = decision?.toLowerCase().startsWith('approve');
+        return isApproved ? 'text-emerald-600 bg-emerald-50 border border-emerald-200' : 'text-rose-500 bg-rose-50 border border-rose-200';
     };
 
     if (loading) {
@@ -119,11 +120,11 @@ const LedgerPage = () => {
                                         <div className="flex flex-col gap-2">
                                             <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
                                                 <div 
-                                                    className="h-full bg-slate-900 rounded-full" 
+                                                    className={`h-full rounded-full ${decision?.toLowerCase().startsWith('approve') ? 'bg-emerald-500' : 'bg-rose-500'}`}
                                                     style={{ width: `${item.updated_state?.probability * 100 || 0}%` }}
                                                 />
                                             </div>
-                                            <span className="text-[10px] font-black text-slate-400 italic">
+                                            <span className={`text-[10px] font-black italic ${decision?.toLowerCase().startsWith('approve') ? 'text-emerald-500' : 'text-rose-400'}`}>
                                                 {(item.updated_state?.probability * 100).toFixed(1)}% Signal
                                             </span>
                                         </div>
