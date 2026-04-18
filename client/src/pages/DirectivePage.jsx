@@ -26,10 +26,16 @@ const DirectivePage = () => {
             const payload = {
                 name: formData.name,
                 income: parseFloat(formData.income),
+                coapplicant_income: 0,
                 credit_score: parseFloat(formData.creditScore),
-                employment_length: 60, 
+                loan_term: 360,
+                gender: 'Male',
+                married: 'Yes',
+                dependents: '0',
+                education: 'Graduate',
+                self_employed: 'No',
+                property_area: 'Semiurban',
                 existing_debt: parseFloat(formData.debts),
-                bank_balance: 50000, 
                 loan_amount: parseFloat(formData.loanAmount)
             };
 

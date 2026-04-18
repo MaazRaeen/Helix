@@ -1,42 +1,72 @@
+const fs = require('fs');
+const path = require('path');
+
 /**
- * Deterministic Decision Engine for Loan Simulation
- * 
- * Formula:
- * score = 0.003 * income + 0.02 * credit_score + 0.01 * employment_length - 0.025 * existing_debt + 0.002 * bank_balance
- * probability = 1 / (1 + exp(-score))
+ * Data-Driven Decision Engine (trained on loan_data_1.csv)
  */
 
-const COEFFICIENTS = {
-    income: 0.003,
-    credit_score: 0.02,
-    employment_length: 0.01,
-    existing_debt: -0.025,
-    bank_balance: 0.002
-};
+let modelMeta = null;
+try {
+    const metaPath = path.join(__dirname, '../data/model_metadata.json');
+    if (fs.existsSync(metaPath)) {
+        modelMeta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    }
+} catch (error) {
+    console.error("Failed to load ML weights:", error);
+}
 
-const THRESHOLD = 0.6; // Probability threshold for Approval
-const TARGET_LOGIT = -Math.log(1 / THRESHOLD - 1); // Score required for probability >= 0.6
+function sigmoid(z) {
+    return 1 / (1 + Math.exp(-z));
+}
 
 function calculateResult(data) {
-    let score = 0;
+    if (!modelMeta) {
+        // Fallback to legacy logic if training fails
+        return { error: "ML Model unavailable", decision: "ERR" };
+    }
+
+    const { weights, means, stds, features } = modelMeta;
+    
+    // Feature Mapping
+    const mappedFeatures = [
+        1, // Bias
+        data.gender === 'Female' ? 1 : 0,
+        data.married === 'Yes' ? 1 : 0,
+        parseInt(data.dependents) || 0,
+        data.education === 'Graduate' ? 1 : 0,
+        data.self_employed === 'Yes' ? 1 : 0,
+        parseFloat(data.income) || 0,
+        parseFloat(data.coapplicant_income) || 0,
+        parseFloat(data.loan_amount) / 1000 || 0, // App uses raw curreny, model might want K (check CSV)
+        parseFloat(data.loan_term) || 360,
+        data.credit_score >= 650 ? 1 : 0, // Simplified credit mapping
+        data.property_area === 'Urban' ? 2 : data.property_area === 'Semiurban' ? 1 : 0
+    ];
+
+    let score = weights[0]; // Start with Bias
     const contributions = [];
 
-    for (const [feature, coef] of Object.entries(COEFFICIENTS)) {
-        const value = data[feature] || 0;
-        const contribution = value * coef;
+    // Skip Bias for contributions
+    for (let i = 1; i < mappedFeatures.length; i++) {
+        const rawValue = mappedFeatures[i];
+        const normalizedValue = (rawValue - means[i]) / (stds[i] || 1);
+        const contribution = weights[i] * normalizedValue;
+        
         score += contribution;
+        
         contributions.push({
-            feature,
-            value,
+            feature: features[i],
+            value: rawValue,
             contribution,
             impact: contribution > 0 ? 'positive' : 'negative'
         });
     }
 
-    const probability = 1 / (1 + Math.exp(-score));
+    const probability = sigmoid(score);
+    const THRESHOLD = 0.5; // Traditional logistic threshold
     const decision = probability >= THRESHOLD ? 'APPROVE' : 'REJECT';
 
-    // Sort contributions by absolute value to find top drivers
+    // Sort contributions for top drivers
     const topFactors = [...contributions]
         .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
         .slice(0, 3);
@@ -47,51 +77,50 @@ function calculateResult(data) {
         decision,
         contributions,
         topFactors,
-        isBorderline: probability >= 0.55 && probability <= 0.65
+        isBorderline: probability >= 0.45 && probability <= 0.55
     };
 }
 
 /**
  * Minimal change required to flip REJECT -> APPROVE
+ * Simplified for multi-feature model.
  */
 function calculateCounterfactuals(data, currentResult) {
-    if (currentResult.decision === 'APPROVE') return null;
+    if (currentResult.decision === 'APPROVE' || !modelMeta) return null;
 
+    const { weights, means, stds, features } = modelMeta;
     const suggestions = [];
-    const currentScore = currentResult.score;
-    const scoreGap = TARGET_LOGIT - currentScore;
+    const scoreGap = 0 - currentResult.score; // Sigmoid(0) = 0.5 threshold
 
-    if (scoreGap <= 0) return null;
+    // Suggest 2 easiest changes
+    for (let i = 1; i < features.length; i++) {
+        const weight = weights[i];
+        if (Math.abs(weight) < 0.1) continue; // Skip weak predictors
 
-    // For each feature, calculate how much it would need to change alone to flip the decision
-    for (const [feature, coef] of Object.entries(COEFFICIENTS)) {
-        if (coef === 0) continue;
+        const rawValue = (i === 1) ? (data.gender === 'Female' ? 1 : 0) : 
+                         (i === 2) ? (data.married === 'Yes' ? 1 : 0) :
+                         (i === 4) ? (data.education === 'Graduate' ? 1 : 0) :
+                         (i === 10) ? (data.credit_score >= 650 ? 1 : 0) :
+                         parseFloat(data[features[i].toLowerCase()]) || 0;
 
-        // Change needed: delta * coef = scoreGap => delta = scoreGap / coef
-        const deltaRequired = scoreGap / coef;
-        const newValue = (data[feature] || 0) + deltaRequired;
+        // Roughly estimate delta: weight * (delta / std) = scoreGap => delta = scoreGap * std / weight
+        const deltaRequired = (scoreGap * stds[i]) / weight;
+        
+        // Only suggest for continuous features that are feasible
+        if (["ApplicantIncome", "LoanAmount"].includes(features[i])) {
+            const newValue = rawValue + deltaRequired;
+            if (newValue < 0) continue;
 
-        // Only suggest realistic changes (e.g., you can't have negative debt or 1000 credit score)
-        // If coef is negative (like debt), deltaRequired will be negative (reducing debt)
-        if (feature === 'credit_score' && newValue > 850) continue;
-        if (feature === 'existing_debt' && newValue < 0) {
-            // If debt reduction alone isn't enough even at 0, skip
-            continue;
+            suggestions.push({
+                feature: features[i].replace('_', ' '),
+                currentValue: Math.round(rawValue),
+                requiredValue: Math.round(newValue),
+                changeNeeded: Math.round(deltaRequired),
+                description: deltaRequired > 0 ? `Increase ${features[i]} by ~${Math.round(deltaRequired)}` : `Decrease ${features[i]} by ~${Math.round(Math.abs(deltaRequired))}`
+            });
         }
-
-        suggestions.push({
-            feature,
-            currentValue: data[feature] || 0,
-            requiredValue: Math.round(newValue * 100) / 100,
-            changeNeeded: Math.round(deltaRequired * 100) / 100,
-            description: coef > 0 
-                ? `Increase ${feature.replace('_', ' ')} by ${Math.abs(Math.round(deltaRequired))}`
-                : `Reduce ${feature.replace('_', ' ')} by ${Math.abs(Math.round(deltaRequired))}`
-        });
     }
 
-    // Sort by "perceived difficulty" or just absolute change? 
-    // Here we'll just return top 2 most impactful suggested changes
     return suggestions.sort((a, b) => Math.abs(a.changeNeeded) - Math.abs(b.changeNeeded)).slice(0, 2);
 }
 

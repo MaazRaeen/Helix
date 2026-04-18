@@ -8,22 +8,38 @@ const ApplicationPage = () => {
   const { setCurrentApplicationId, setLatestResult } = useApplication();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    name: '',
     income: '',
+    coapplicant_income: '0',
     creditScore: '',
-    employment: 'Employed (Salaried)',
-    loanTerm: '36m',
+    employment: 'Salaried',
+    loanTerm: '360',
     loanAmount: '',
-    debts: ''
+    debts: '',
+    gender: 'Male',
+    married: 'No',
+    dependents: '0',
+    education: 'Graduate',
+    self_employed: 'No',
+    property_area: 'Semiurban'
   });
 
   const loadDemoData = () => {
     setFormData({
-      income: '28000',
-      creditScore: '580',
-      employment: 'Employed (Salaried)',
-      loanTerm: '36m',
-      loanAmount: '200000',
-      debts: '8000'
+      name: 'Maaz Raeen',
+      income: '45000',
+      coapplicant_income: '20000',
+      creditScore: '720',
+      employment: 'Salaried',
+      loanTerm: '360',
+      loanAmount: '250000',
+      debts: '5000',
+      gender: 'Male',
+      married: 'Yes',
+      dependents: '1',
+      education: 'Graduate',
+      self_employed: 'No',
+      property_area: 'Semiurban'
     });
   };
 
@@ -34,12 +50,22 @@ const ApplicationPage = () => {
     try {
       // Map frontend fields to backend expected fields
       const payload = {
+        name: formData.name || "Anonymous Applicant",
         income: parseFloat(formData.income),
+        coapplicant_income: parseFloat(formData.coapplicant_income),
         credit_score: parseFloat(formData.creditScore),
-        employment_length: 24, // Default for demo
+        loan_amount: parseFloat(formData.loanAmount),
+        loan_term: parseFloat(formData.loanTerm),
+        gender: formData.gender,
+        married: formData.married,
+        dependents: formData.dependents,
+        education: formData.education,
+        self_employed: formData.self_employed,
+        property_area: formData.property_area,
         existing_debt: parseFloat(formData.debts),
-        bank_balance: 15000, // Default for demo
-        loan_amount: parseFloat(formData.loanAmount)
+        // Legacy compatibility
+        employment_length: 24,
+        bank_balance: 15000
       };
 
       const response = await axios.post('http://localhost:5070/api/predict', payload);
@@ -89,8 +115,21 @@ const ApplicationPage = () => {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary-accent/5 blur-[100px] -mr-32 -mt-32" />
           
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
+            <div className="md:col-span-2 flex flex-col gap-3 group">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Full Name</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Maaz Raeen" 
+                className="input-base"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                required
+              />
+              <p className="text-[10px] text-slate-400 font-bold ml-1 italic text-right border-r-2 border-primary-accent pr-3">Legal identity for audit purposes</p>
+            </div>
+
             <div className="flex flex-col gap-3 group">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Monthly Income (₹)</label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Applicant Income (₹)</label>
               <input 
                 type="number" 
                 placeholder="e.g. 45,000" 
@@ -99,7 +138,17 @@ const ApplicationPage = () => {
                 onChange={(e) => setFormData({...formData, income: e.target.value})}
                 required
               />
-              <p className="text-[10px] text-slate-400 font-bold ml-1 italic">Calculated post-tax net intake</p>
+            </div>
+
+            <div className="flex flex-col gap-3 group">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Coapplicant Income (₹)</label>
+              <input 
+                type="number" 
+                placeholder="e.g. 20,000" 
+                className="input-base"
+                value={formData.coapplicant_income}
+                onChange={(e) => setFormData({...formData, coapplicant_income: e.target.value})}
+              />
             </div>
 
             <div className="flex flex-col gap-3 group">
@@ -112,37 +161,96 @@ const ApplicationPage = () => {
                 onChange={(e) => setFormData({...formData, creditScore: e.target.value})}
                 required
               />
-              <p className="text-[10px] text-slate-400 font-bold ml-1 italic">Min: 300 | Max: 850</p>
             </div>
 
             <div className="flex flex-col gap-3 group">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Employment Status</label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Education Level</label>
               <select 
                 className="input-base bg-white"
-                value={formData.employment}
-                onChange={(e) => setFormData({...formData, employment: e.target.value})}
+                value={formData.education}
+                onChange={(e) => setFormData({...formData, education: e.target.value})}
               >
-                <option>Employed (Salaried)</option>
-                <option>Self-Employed</option>
-                <option>Unemployed</option>
+                <option>Graduate</option>
+                <option>Not Graduate</option>
               </select>
             </div>
 
-            <div className="flex flex-col gap-3">
-              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Loan Term</label>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {['12m', '24m', '36m', '48m', '60m'].map(term => (
+            <div className="flex flex-col gap-3 group">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Gender</label>
+              <div className="flex gap-4 pt-1">
+                {['Male', 'Female'].map(g => (
                   <button
-                    key={term}
+                    key={g}
                     type="button"
-                    onClick={() => setFormData({...formData, loanTerm: term})}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all duration-200 ${
-                      formData.loanTerm === term 
-                      ? 'bg-primary-accent text-white border-primary-accent shadow-lg shadow-primary-accent/20' 
-                      : 'bg-white text-slate-400 border-slate-100 hover:border-primary-accent/30'
+                    onClick={() => setFormData({...formData, gender: g})}
+                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
+                      formData.gender === g ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-100'
                     }`}
                   >
-                    {term}
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 group">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Marital Status</label>
+              <div className="flex gap-4 pt-1">
+                {['Yes', 'No'].map(m => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setFormData({...formData, married: m})}
+                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
+                      formData.married === m ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-100'
+                    }`}
+                  >
+                    {m === 'Yes' ? 'Married' : 'Single'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 group">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Dependents</label>
+              <select 
+                className="input-base bg-white"
+                value={formData.dependents}
+                onChange={(e) => setFormData({...formData, dependents: e.target.value})}
+              >
+                <option>0</option>
+                <option>1</option>
+                <option>2</option>
+                <option>3+</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-3 group">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Property Area</label>
+              <select 
+                className="input-base bg-white"
+                value={formData.property_area}
+                onChange={(e) => setFormData({...formData, property_area: e.target.value})}
+              >
+                <option>Urban</option>
+                <option>Semiurban</option>
+                <option>Rural</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-3 group">
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest group-focus-within:text-primary-accent transition-colors">Self Employed</label>
+              <div className="flex gap-4 pt-1">
+                {['Yes', 'No'].map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFormData({...formData, self_employed: s})}
+                    className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest border-2 transition-all ${
+                      formData.self_employed === s ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-100'
+                    }`}
+                  >
+                    {s}
                   </button>
                 ))}
               </div>

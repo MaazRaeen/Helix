@@ -6,7 +6,8 @@ const { calculateResult, calculateCounterfactuals } = require('../utils/decision
 const { 
     generateInitialExplanation, 
     generateDeltaExplanation, 
-    generateCounterfactualSuggestions 
+    generateCounterfactualSuggestions,
+    handleOracleChat
 } = require('../utils/geminiService');
 
 /**
@@ -25,7 +26,23 @@ router.get('/cases', async (req, res) => {
 });
 
 /**
- * GET /api/cases/:id - Fetch a single case
+ * GET /api/case/:id - Singular alias for frontend compatibility
+ */
+router.get('/case/:id', async (req, res) => {
+    if (!mongoose.connection.readyState || mongoose.connection.readyState !== 1) {
+        const item = (global.mockCases || []).find(c => c._id === req.params.id);
+        return item ? res.json(item) : res.status(404).json({ error: 'Case not found' });
+    }
+    try {
+        const item = await Case.findById(req.params.id);
+        res.json(item);
+    } catch (error) {
+        res.status(404).json({ error: 'Case not found' });
+    }
+});
+
+/**
+ * GET /api/cases/:id - Fetch a single case (Plural version)
  */
 router.get('/cases/:id', async (req, res) => {
     if (!mongoose.connection.readyState || mongoose.connection.readyState !== 1) {
@@ -159,6 +176,19 @@ router.post('/re-evaluate/:id', async (req, res) => {
 
         await existingCase.save();
         res.json(existingCase);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/chat - General Oracle Chat
+ */
+router.post('/chat', async (req, res) => {
+    try {
+        const { message, history } = req.body;
+        const response = await handleOracleChat(message, history || []);
+        res.json({ response });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

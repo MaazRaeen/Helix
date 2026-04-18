@@ -14,10 +14,18 @@ const ContestPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [file, setFile] = useState(null);
   const [formData, setFormData] = useState({
+    name: '',
     income: '',
+    coapplicant_income: '',
     creditScore: '',
-    employment: '',
     loanAmount: '',
+    loanTerm: '',
+    gender: '',
+    married: '',
+    dependents: '',
+    education: '',
+    self_employed: '',
+    property_area: '',
     debts: '',
     reason: ''
   });
@@ -28,11 +36,19 @@ const ContestPage = () => {
         const response = await axios.get(`http://localhost:5070/api/case/${id}`);
         const data = response.data;
         setFormData({
+          name: data.name || '',
           income: data.income.toString(),
+          coapplicant_income: (data.coapplicant_income || 0).toString(),
           creditScore: data.credit_score.toString(),
-          employment: 'Employed (Salaried)', // Mocked default
           loanAmount: data.loan_amount.toString(),
-          debts: data.existing_debt.toString(),
+          loanTerm: (data.loan_term || 360).toString(),
+          gender: data.gender || 'Male',
+          married: data.married || 'No',
+          dependents: data.dependents || '0',
+          education: data.education || 'Graduate',
+          self_employed: data.self_employed || 'No',
+          property_area: data.property_area || 'Semiurban',
+          debts: (data.existing_debt || 0).toString(),
           reason: ''
         });
       } catch (error) {
@@ -67,15 +83,24 @@ const ContestPage = () => {
     
     try {
       // Construct updated payload
-      const payload = {
+      const updatedData = {
+        name: formData.name,
         income: parseFloat(formData.income),
+        coapplicant_income: parseFloat(formData.coapplicant_income),
         credit_score: parseFloat(formData.creditScore),
-        existing_debt: parseFloat(formData.debts),
-        loan_amount: parseFloat(formData.loanAmount)
+        loan_amount: parseFloat(formData.loanAmount),
+        loan_term: parseFloat(formData.loanTerm),
+        gender: formData.gender,
+        married: formData.married,
+        dependents: formData.dependents,
+        education: formData.education,
+        self_employed: formData.self_employed,
+        property_area: formData.property_area,
+        existing_debt: parseFloat(formData.debts)
       };
 
-      // Call re-evaluate endpoint
-      await axios.post(`http://localhost:5070/api/re-evaluate/${id}`, payload);
+      // Call re-evaluate endpoint with the wrapped updatedData object
+      await axios.post(`http://localhost:5070/api/re-evaluate/${id}`, { updatedData });
       
       // Navigate to delta after animation completes
       // Navigation happens in the ProcessingAnimation callback
@@ -138,15 +163,26 @@ const ContestPage = () => {
           <form onSubmit={handleSubmit} className="flex flex-col gap-10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-12">
               
+              {/* Full Name */}
+              <div className="flex flex-col gap-3 group md:col-span-2">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Legal Name (Verification Required)</label>
+                <input 
+                  type="text" 
+                  className="input-base border-slate-100"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                />
+              </div>
+
               {/* Monthly Income - High Impact */}
               <div className="flex flex-col gap-3 group">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Monthly Income (₹)</label>
-                  <span className="bg-rejected/10 text-rejected px-3 py-1 rounded-full text-[9px] font-black tracking-widest">HIGH IMPACT</span>
+                  <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Main Income (₹)</label>
+                  <span className="bg-rejected/10 text-rejected px-3 py-1 rounded-full text-[9px] font-black tracking-widest">CRITICAL</span>
                 </div>
                 <input 
                   type="number" 
-                  className="input-base border-rejected/20 focus:ring-rejected/10 focus:border-rejected shadow-sm shadow-rejected/5"
+                  className="input-base border-rejected/20 focus:ring-rejected/10 focus:border-rejected"
                   value={formData.income}
                   onChange={(e) => setFormData({...formData, income: e.target.value})}
                 />
@@ -156,39 +192,30 @@ const ContestPage = () => {
               <div className="flex flex-col gap-3 group">
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Credit Score</label>
-                  <span className="bg-rejected/10 text-rejected px-3 py-1 rounded-full text-[9px] font-black tracking-widest">HIGH IMPACT</span>
+                  <span className="bg-rejected/10 text-rejected px-3 py-1 rounded-full text-[9px] font-black tracking-widest">CRITICAL</span>
                 </div>
                 <input 
                   type="number" 
-                  className="input-base border-rejected/20 focus:ring-rejected/10 focus:border-rejected shadow-sm shadow-rejected/5"
+                  className="input-base border-rejected/20 focus:ring-rejected/10 focus:border-rejected"
                   value={formData.creditScore}
                   onChange={(e) => setFormData({...formData, creditScore: e.target.value})}
                 />
               </div>
 
-              {/* Employment - Medium Impact */}
+              {/* Coapplicant Income */}
               <div className="flex flex-col gap-3 group">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Employment Status</label>
-                  <span className="bg-warning/10 text-warning px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase">Medium Impact</span>
-                </div>
-                <select 
-                  className="input-base border-warning/10"
-                  value={formData.employment}
-                  onChange={(e) => setFormData({...formData, employment: e.target.value})}
-                >
-                  <option>Employed (Salaried)</option>
-                  <option>Self-Employed</option>
-                  <option>Unemployed</option>
-                </select>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Co-App Income (₹)</label>
+                <input 
+                  type="number" 
+                  className="input-base"
+                  value={formData.coapplicant_income}
+                  onChange={(e) => setFormData({...formData, coapplicant_income: e.target.value})}
+                />
               </div>
 
-              {/* Loan Amount - Low Impact */}
+              {/* Loan Amount */}
               <div className="flex flex-col gap-3 group">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Loan Amount (₹)</label>
-                  <span className="text-slate-300 px-3 py-1 text-[9px] font-black tracking-widest uppercase">Neutral Impact</span>
-                </div>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Requested Amount (₹)</label>
                 <input 
                   type="number" 
                   className="input-base"
@@ -196,6 +223,68 @@ const ContestPage = () => {
                   onChange={(e) => setFormData({...formData, loanAmount: e.target.value})}
                 />
               </div>
+
+              {/* Education */}
+              <div className="flex flex-col gap-3 group">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Education Level</label>
+                <select 
+                  className="input-base"
+                  value={formData.education}
+                  onChange={(e) => setFormData({...formData, education: e.target.value})}
+                >
+                  <option>Graduate</option>
+                  <option>Not Graduate</option>
+                </select>
+              </div>
+
+              {/* Property Area */}
+              <div className="flex flex-col gap-3 group">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Property Area</label>
+                <select 
+                  className="input-base"
+                  value={formData.property_area}
+                  onChange={(e) => setFormData({...formData, property_area: e.target.value})}
+                >
+                  <option>Urban</option>
+                  <option>Semiurban</option>
+                  <option>Rural</option>
+                </select>
+              </div>
+
+              {/* Marital Status */}
+              <div className="flex flex-col gap-3 group">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Marital Status</label>
+                <div className="flex gap-2">
+                  {['Yes', 'No'].map(v => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setFormData({...formData, married: v})}
+                      className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${
+                        formData.married === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-400 border-slate-100'
+                      }`}
+                    >
+                      {v === 'Yes' ? 'Married' : 'Single'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Dependents */}
+              <div className="flex flex-col gap-3 group">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Dependents</label>
+                <select 
+                  className="input-base"
+                  value={formData.dependents}
+                  onChange={(e) => setFormData({...formData, dependents: e.target.value})}
+                >
+                  <option>0</option>
+                  <option>1</option>
+                  <option>2</option>
+                  <option>3+</option>
+                </select>
+              </div>
+
             </div>
           </form>
         </div>

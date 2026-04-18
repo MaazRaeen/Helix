@@ -11,6 +11,7 @@ import InnovationManifesto from './pages/InnovationManifesto';
 import DirectivePage from './pages/DirectivePage';
 import LedgerPage from './pages/LedgerPage';
 import AlertsPage from './pages/AlertsPage';
+import ChatWidget from './components/ChatWidget';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -168,6 +169,8 @@ function App() {
                       Decentralized Governance Ledger • TLS Secured
                     </p>
                 </div>
+                {/* Helix Oracle Chatbot */}
+                <ChatWidget />
             </main>
         </div>
     );
