@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Case = require('../models/Application');
+const AuditLog = require('../models/AuditLog');
 const { calculateResult, calculateCounterfactuals } = require('../utils/decisionEngine');
 const { 
     generateInitialExplanation, 
@@ -10,6 +11,23 @@ const {
     generateCounterfactualSuggestions,
     handleOracleChat
 } = require('../utils/geminiService');
+const { requireAuth, requireAdmin } = require('../middleware/authMiddleware');
+
+// Helper to log an audit action
+async function logAudit(req, action, caseId, details) {
+    try {
+        if (mongoose.connection.readyState === 1) {
+            await AuditLog.create({
+                userId: req.user?.id,
+                userName: req.user?.name || 'Anonymous',
+                userRole: req.user?.role || 'guest',
+                action,
+                caseId,
+                details
+            });
+        }
+    } catch (e) { /* silent */ }
+}
 
 router.get('/ping', (req, res) => res.json({ status: 'online', context: 'Helix API RESTORED', timestamp: new Date() }));
 
@@ -239,6 +257,92 @@ router.delete('/cases/:id', async (req, res) => {
     } catch (error) {
         console.error(`[ERROR] Delete failed for ${req.params.id}:`, error.message);
         res.status(500).json({ error: 'Delete operation failed' });
+    }
+});
+
+/**
+ * GET /api/analytics — Aggregate dashboard stats (admin)
+ */
+router.get('/analytics', async (req, res) => {
+    try {
+        let allCases;
+        if (!mongoose.connection.readyState || mongoose.connection.readyState !== 1) {
+            allCases = global.mockCases || [];
+        } else {
+            allCases = await Case.find().lean();
+        }
+
+        const total = allCases.length;
+        const approved = allCases.filter(c => {
+            const d = c.updated_state?.decision || c.initial_result?.decision || '';
+            return d.toLowerCase().startsWith('approve');
+        }).length;
+        const rejected = total - approved;
+        const contested = allCases.filter(c => c.updated_state?.isContested).length;
+
+        const avgConfidence = total > 0
+            ? allCases.reduce((sum, c) => sum + (c.updated_state?.probability || c.initial_result?.probability || 0), 0) / total
+            : 0;
+
+        // Factor frequency from topFactors
+        const factorCount = {};
+        allCases.forEach(c => {
+            const factors = c.initial_result?.topFactors || [];
+            factors.forEach(f => {
+                const name = f.feature || 'Unknown';
+                factorCount[name] = (factorCount[name] || 0) + 1;
+            });
+        });
+        const topFactors = Object.entries(factorCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([feature, count]) => ({ feature, count }));
+
+        // Applications over time (last 7 days)
+        const now = new Date();
+        const timeline = [];
+        for (let i = 6; i >= 0; i--) {
+            const day = new Date(now);
+            day.setDate(day.getDate() - i);
+            const dayStr = day.toISOString().split('T')[0];
+            const count = allCases.filter(c => {
+                const d = new Date(c.createdAt);
+                return d.toISOString().split('T')[0] === dayStr;
+            }).length;
+            timeline.push({ date: dayStr, count });
+        }
+
+        await logAudit(req, 'VIEW_ANALYTICS', null, 'Viewed analytics dashboard');
+
+        res.json({
+            total,
+            approved,
+            rejected,
+            contested,
+            approvalRate: total > 0 ? ((approved / total) * 100).toFixed(1) : 0,
+            contestationRate: total > 0 ? ((contested / total) * 100).toFixed(1) : 0,
+            avgConfidence: (avgConfidence * 100).toFixed(1),
+            topFactors,
+            timeline
+        });
+    } catch (error) {
+        console.error('[ERROR] Analytics failed:', error.message);
+        res.status(500).json({ error: 'Analytics computation failed' });
+    }
+});
+
+/**
+ * GET /api/audit-log — View audit trail (admin only)
+ */
+router.get('/audit-log', async (req, res) => {
+    if (!mongoose.connection.readyState || mongoose.connection.readyState !== 1) {
+        return res.json([]);
+    }
+    try {
+        const logs = await AuditLog.find().sort({ timestamp: -1 }).limit(100).lean();
+        res.json(logs);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch audit logs' });
     }
 });
 

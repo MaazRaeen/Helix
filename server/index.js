@@ -3,17 +3,24 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const apiRoutes = require('./routes/api');
+const authRoutes = require('./routes/auth');
 const Case = require('./models/Application');
+const User = require('./models/User');
 const { calculateResult } = require('./utils/decisionEngine');
+const { authMiddleware } = require('./middleware/authMiddleware');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Attach user info from JWT to all requests (non-blocking)
+app.use(authMiddleware);
+
 // Health Check
-app.get('/api-health', (req, res) => res.json({ status: 'active', timestamp: new Date() }));
+app.get('/api-health', (req, res) => res.json({ status: 'active', timestamp: new Date(), user: req.user || null }));
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api', apiRoutes);
 
 // Database Connection & Seeding
@@ -25,6 +32,7 @@ let isUsingMock = false;
 mongoose.connect(MONGODB_URI)
     .then(async () => {
         console.log('Connected to MongoDB');
+        await seedAdminUser();
         await seedDemoData();
         app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
     })
@@ -33,9 +41,54 @@ mongoose.connect(MONGODB_URI)
         isUsingMock = true;
         // In-memory mock storage
         global.mockCases = [];
+        global.mockUsers = [];
         seedMockData();
+        seedMockAdmin();
         app.listen(PORT, () => console.log(`Server running with MOCK DB on port ${PORT}`));
     });
+
+function seedMockAdmin() {
+    global.mockUsers.push({
+        _id: 'admin-001',
+        name: 'Admin',
+        email: 'admin@helix.gov',
+        password: 'admin123',
+        role: 'admin',
+        createdAt: new Date()
+    });
+    global.mockUsers.push({
+        _id: 'user-001',
+        name: 'Maaz Raeen',
+        email: 'maaz@helix.gov',
+        password: 'user123',
+        role: 'user',
+        createdAt: new Date()
+    });
+    console.log('[AUTH] Mock admin & user seeded (admin@helix.gov / admin123)');
+}
+
+async function seedAdminUser() {
+    const existing = await User.findOne({ email: 'admin@helix.gov' });
+    if (existing) return;
+
+    const admin = new User({
+        name: 'Admin',
+        email: 'admin@helix.gov',
+        password: 'admin123',
+        role: 'admin'
+    });
+    await admin.save();
+
+    const user = new User({
+        name: 'Maaz Raeen',
+        email: 'maaz@helix.gov',
+        password: 'user123',
+        role: 'user'
+    });
+    await user.save();
+
+    console.log('[AUTH] Admin & user accounts seeded');
+}
 
 async function seedMockData() {
     const demoData = [
